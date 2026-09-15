@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <style name="Theme.TodoList" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- https://developer.android.com/develop/ui/views/launch/splash-screen -->
+    <style name="Theme.TodoList.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/ic_launcher_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.TodoList</item>
+        <!-- https://developer.android.com/reference/android/R.attr#windowSplashScreenBehavior -->
+        <item name="android:windowSplashScreenBehavior" tools:targetApi="33">icon_preferred</item>
+    </style>
+</resources>

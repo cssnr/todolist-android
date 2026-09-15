@@ -1,0 +1,96 @@
+name: "Lint"
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: "Lint"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v7
+
+      - name: "Debug event.json"
+        continue-on-error: true
+        run: cat "${GITHUB_EVENT_PATH}"
+      - name: "Debug CTX github"
+        continue-on-error: true
+        env:
+          GITHUB_CTX: ${{ toJSON(github) }}
+        run: echo "$GITHUB_CTX"
+      - name: "Debug Environment"
+        continue-on-error: true
+        run: env
+
+      - name: "ktlint"
+        if: ${{ !cancelled() }}
+        continue-on-error: true # TODO: Resolve KTLint Issues
+        env:
+          klint: ${RUNNER_TEMP}/ktlint
+        run: |
+          echo "Output File: ${{ env.klint }}"
+          wget -q https://github.com/pinterest/ktlint/releases/latest/download/ktlint -O ${{ env.klint }}
+          file ${{ env.klint }}
+          chmod +x ${{ env.klint }}
+          ${{ env.klint }} --version
+          ${{ env.klint }} --color 'app/src/main/java/**'
+
+      - name: "prettier"
+        if: ${{ !cancelled() }}
+        run: |
+          echo "::group::Install"
+          npm install prettier
+          echo "::endgroup::"
+          npx prettier --check .
+
+      - name: "yamllint"
+        if: ${{ !cancelled() }}
+        env:
+          CONFIG: .github/yamllint.yaml
+        run: |
+          echo "::group::List Files"
+          yamllint -c "${{ env.CONFIG }}" --list-files .
+          echo "::endgroup::"
+          yamllint -c "${{ env.CONFIG }}" .
+
+      - name: "actionlint"
+        if: ${{ !cancelled() }}
+        uses: cssnr/actionlint-action@v1
+        with:
+          shellcheck_opts: -e SC2129
+
+      - name: "Check Items JSON"
+        if: ${{ !cancelled() }}
+        env:
+          file: app/src/main/assets/items.json
+        run: |
+          echo "Check no duplicate items"
+          if ! jq -e '[.categories[].items[]] | group_by(.) | map(select(length > 1)) | length == 0' "${file}"; then
+            echo "::error file=${file}::Duplicate items found"
+            exit 1
+          fi
+          echo "Check items are alphabetical"
+          if ! jq -e 'all(.categories[]; .items == (.items | sort_by(gsub(" "; "") | ascii_downcase)))' "${file}"; then
+            echo "::error file=${file}::Items are not alphabetical"
+            exit 1
+          fi
+
+      #- name: "shellcheck"
+      #  if: ${{ !cancelled() }}
+      #  uses: ludeeus/action-shellcheck@master
+      #  env:
+      #    SHELLCHECK_OPTS: -x
+      #  with:
+      #    scandir: .github/scripts

@@ -1,0 +1,282 @@
+name: "Release"
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  key_name: todolist-release
+  package_name: org.cssnr.todolist
+
+jobs:
+  release:
+    name: "Release"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      apk_file: app-release-unsigned.apk
+      apk_path: app/build/outputs/apk/release
+      aab_file: app-release.aab
+      aab_path: app/build/outputs/bundle/release
+      mapping_file: app/build/outputs/mapping/release/mapping.txt
+      debug_symbols: app/build/intermediates/merged_native_libs/release/mergeReleaseNativeLibs/out/lib
+      tools_path: /usr/local/lib/android/sdk/build-tools/36.0.0
+      cmdline_tools: /usr/local/lib/android/sdk/cmdline-tools/latest/bin
+      key_file: release.keystore
+      gradle_file: app/build.gradle.kts
+      signed_apk: app-release.apk
+
+    steps:
+      - name: "Checkout"
+        uses: actions/checkout@v7
+
+      - name: "Debug Event"
+        continue-on-error: true
+        run: |
+          echo "ref: ${{ github.ref }}"
+          echo "event_name: ${{ github.event_name }}"
+          echo "github.event.repository.name: ${{ github.event.repository.name }}"
+
+          echo "::group::cat event.json"
+          cat "${GITHUB_EVENT_PATH}"
+          echo "::endgroup::"
+
+      - name: "Set Tools Path"
+        run: |
+          echo "${{ env.tools_path }}" >> "$GITHUB_PATH"
+          echo "${{ env.cmdline_tools }}" >> "$GITHUB_PATH"
+
+      - name: "Verify Tools"
+        run: |
+          which keytool
+          which zipalign
+          which apksigner
+          which apkanalyzer
+
+          echo "::group::PATH"
+          echo "${PATH}"
+          echo "::endgroup::"
+          echo "::group::ls tools_path"
+          ls -lAh "${{ env.tools_path }}"
+          echo "::endgroup::"
+
+      - name: "Update Version"
+        uses: chkfung/android-version-actions@v1
+        id: version
+        with:
+          gradlePath: ${{ env.gradle_file }}
+          versionCode: ${{ github.run_number }}
+          versionName: ${{ github.ref_name }}
+
+      - name: "Debug Version"
+        continue-on-error: true
+        run: |
+          echo "versionCode: ${{ github.run_number }}"
+          echo "versionName: ${{ github.ref_name }}"
+
+          echo "::group::cat ${{ env.gradle_file }}"
+          cat ${{ env.gradle_file }}
+          echo "::endgroup::"
+
+      #- name: "Write Google Services File"
+      #  run: |
+      #    echo "${{ secrets.GOOGLE_SERVICES }}" | base64 --decode > app/google-services.json
+      #    stat app/google-services.json
+
+      - name: "Write Secret Properties"
+        run: |
+          echo "${{ secrets.SECRET_PROPERTIES }}" | base64 --decode > secret.properties
+          wc -l secret.properties
+
+      - name: "Write Keystore File"
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE }}" | base64 --decode > ${{ env.key_file }}
+          echo "${{ secrets.ANDROID_KEYSTORE_PASS }}" | keytool -list -keystore ${{ env.key_file }}
+
+      #- name: "Setup Node 24"
+      #  uses: actions/setup-node@v7
+      #  with:
+      #    node-version: 24
+      #
+      #- name: "Prepare Build"
+      #  working-directory: ".github/scripts"
+      #  run: |
+      #    bash prepare.sh
+      #
+      #- name: "Debug Prepare"
+      #  continue-on-error: true
+      #  run: |
+      #    ls .
+      #    ls -lAh app
+
+      - name: "Setup Java"
+        uses: actions/setup-java@v6
+        with:
+          distribution: "zulu"
+          java-version: "17"
+          #cache: "gradle"
+
+      - name: "Gradle Assemble APK"
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleRelease
+
+      - name: "Verify APK"
+        run: |
+          apkanalyzer -h apk summary "${{ env.apk_path }}/${{ env.apk_file }}"
+
+          echo "::group::ls env.apk_path"
+          ls -lAh ${{ env.apk_path }}
+          echo "::endgroup::"
+
+      - name: "Align APK"
+        run: |
+          mv "${{ env.apk_path }}/${{ env.apk_file }}" "${{ env.apk_path }}/source.apk"
+          zipalign -P 16 -f -v 4 \
+            "${{ env.apk_path }}/source.apk" \
+            "${{ env.apk_path }}/${{ env.apk_file }}"
+          zipalign -c -P 16 -v 4 "${{ env.apk_path }}/${{ env.apk_file }}"
+          rm -f "${{ env.apk_path }}/source.apk"
+
+      - name: "Sign APK"
+        run: |
+          apksigner sign --ks ${{ env.key_file }} \
+            --ks-pass pass:${{ secrets.ANDROID_KEYSTORE_PASS }} \
+            --ks-key-alias ${{ env.key_name }} \
+            "${{ env.apk_path }}/${{ env.apk_file }}"
+          apksigner verify --verbose "${{ env.apk_path }}/${{ env.apk_file }}"
+          mv "${{ env.apk_path }}/${{ env.apk_file }}" "${{ env.apk_path }}/${{ env.signed_apk }}"
+
+      - name: "Upload Mapping to Artifacts"
+        uses: actions/upload-artifact@v7
+        with:
+          name: mapping
+          path: ${{ env.mapping_file }}
+
+      - name: "Upload APK to Artifacts"
+        uses: actions/upload-artifact@v7
+        with:
+          name: release
+          path: ${{ env.apk_path }}
+
+      - name: "Upload APK to Release"
+        if: ${{ github.event_name == 'release' }}
+        uses: cssnr/upload-release-action@v1
+        with:
+          files: ${{ env.apk_path }}/${{ env.signed_apk }}
+          overwrite: true
+
+      #- name: "Gradle Bundle AAB"
+      #  if: ${{ !github.event.release.prerelease }}
+      #  run: |
+      #    chmod +x ./gradlew
+      #    ./gradlew bundleRelease
+      #
+      #- name: "Debug Bundle"
+      #  if: ${{ !github.event.release.prerelease }}
+      #  continue-on-error: true
+      #  run: |
+      #    echo "env.aab_path: ${{ env.aab_path }}"
+      #    ls -lAh "${{ env.aab_path }}" ||:
+      #    echo "env.debug_symbols: ${{ env.debug_symbols }}"
+      #    ls -lAh "${{ env.debug_symbols }}" ||:
+      #    echo "env.mapping_file: ${{ env.mapping_file }}"
+      #    ls -lAh "$(dirname "${{ env.debug_symbols }}")" ||:
+      #
+      #- name: "Sign Bundle"
+      #  if: ${{ !github.event.release.prerelease }}
+      #  run: |
+      #    apksigner sign --ks ${{ env.key_file }} \
+      #      --min-sdk-version 26 \
+      #      --v1-signing-enabled true \
+      #      --v2-signing-enabled true \
+      #      --ks-pass pass:${{ secrets.ANDROID_KEYSTORE_PASS }} \
+      #      --ks-key-alias ${{ env.key_name }} \
+      #      "${{ env.aab_path }}/${{ env.aab_file }}"
+      #
+      #- name: "Upload Bundle to Artifacts"
+      #  if: ${{ !github.event.release.prerelease }}
+      #  uses: actions/upload-artifact@v7
+      #  with:
+      #    name: bundle
+      #    path: ${{ env.aab_path }}
+      #
+      #- name: "Parse Release Notes"
+      #  if: ${{ github.event_name == 'release' && !github.event.release.prerelease }}
+      #  id: notes
+      #  run: |
+      #    body="${{ github.event.release.body }}"
+      #    summary="$(echo "${body%%#*}" | tr -d '\r' | sed ':a;N;$!ba;s/\n*$//')"
+      #    echo "summary<<EOF" >> "$GITHUB_OUTPUT"
+      #    echo "$summary" >> "$GITHUB_OUTPUT"
+      #    echo "EOF" >> "$GITHUB_OUTPUT"
+      #
+      #- name: "Generate Whats New"
+      #  if: ${{ github.event_name == 'release' && !github.event.release.prerelease }}
+      #  run: |
+      #    mkdir -p whatsNew
+      #    echo -n "${{ steps.notes.outputs.summary }}" > whatsNew/whatsnew-en-US
+      #
+      #- name: "Upload Google Play"
+      #  if: ${{ github.event_name == 'release' && !github.event.release.prerelease }}
+      #  uses: r0adkll/upload-google-play@v1
+      #  with:
+      #    serviceAccountJsonPlainText: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+      #    packageName: ${{ env.package_name }}
+      #    releaseFiles: ${{ env.aab_path }}/${{ env.aab_file }}
+      #    debugSymbols: ${{ env.debug_symbols }}
+      #    mappingFile: ${{ env.mapping_file }}
+      #    whatsNewDirectory: whatsNew
+      #    releaseName: "${{ github.run_number }} (${{ github.ref_name }})"
+      #    track: internal
+
+      - name: "VirusTotal"
+        if: ${{ github.event_name == 'release' }}
+        uses: cssnr/virustotal-action@v2
+        continue-on-error: true
+        with:
+          vt_api_key: ${{ secrets.VT_API_KEY }}
+
+      - name: "Update Release Notes Action"
+        if: ${{ github.event_name == 'release' }}
+        uses: smashedr/update-release-notes-action@master
+        continue-on-error: true
+        with:
+          android: |
+            version_name: ${{ github.ref_name }}
+            version_code: ${{ github.run_number }}
+            package_id: ${{ env.package_name }}
+
+      - name: "Write Job Summary"
+        if: ${{ !github.event.act }}
+        continue-on-error: true
+        run: |
+          echo -e "## Android Release\n\n" >> "$GITHUB_STEP_SUMMARY"
+
+          echo -e "Final APK: \`${{ env.signed_apk }}\`\n\n" >> "$GITHUB_STEP_SUMMARY"
+
+          echo -e "<details><summary>Build Artifacts</summary>\n\n" >> "$GITHUB_STEP_SUMMARY"
+          echo -e "\`\`\`text\n$(ls -lAh ${{ env.apk_path }})\n\`\`\`\n\n" >> "$GITHUB_STEP_SUMMARY"
+          echo -e "</details>\n\n" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ -f "${{ env.apk_path }}/output-metadata.json" ];then
+            echo -e "<details><summary>File: output-metadata.json</summary>\n\n" >> "$GITHUB_STEP_SUMMARY"
+            echo -e "\`\`\`json\n$(cat ${{ env.apk_path }}/output-metadata.json)\n\`\`\`\n\n" >> "$GITHUB_STEP_SUMMARY"
+            echo -e "</details>\n\n" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          echo -e "\n\n---" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: "Send Failure Notification"
+        if: ${{ failure() && github.event_name == 'release' }}
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          description: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

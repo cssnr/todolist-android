@@ -1,0 +1,64 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+version: "3"
+
+vars:
+  GRADLEW: 'gradlew{{if eq OS "windows"}}.bat{{end}}'
+  PACKAGE: org.cssnr.todolist.dev
+  ACTIVITY: org.cssnr.todolist.MainActivity
+
+tasks:
+  check:
+    desc: Check Non-Kotlin Files
+    aliases: [prettier:check]
+    cmds:
+      - prettier --check .
+      - yamllint -c .github/yamllint.yaml .
+      - actionlint -shellcheck="-e SC2129"
+
+  format:
+    desc: Format Non-Kotlin Files
+    aliases: [prettier, prettier:write]
+    cmds:
+      - prettier --write .
+
+  lint:
+    desc: Gradle Lint
+    cmd: "{{.GRADLEW}} lint {{.CLI_ARGS}}"
+
+  compile:
+    desc: Compile Kotlin
+    cmd: "{{.GRADLEW}} :app:compileDebugKotlin {{.CLI_ARGS}}"
+
+  debug:
+    desc: Build Debug (recommended android studio)
+    cmd: "{{.GRADLEW}} assembleDebug {{.CLI_ARGS}}"
+
+  release:
+    desc: Build Release APK
+    cmd: "{{.GRADLEW}} assembleRelease {{.CLI_ARGS}}"
+
+  bundle:
+    desc: Build Android App Bundle
+    cmd: "{{.GRADLEW}} bundleRelease {{.CLI_ARGS}}"
+
+  play:
+    desc: Assemble, Install and Launch
+    cmds:
+      - "{{.GRADLEW}} :app:installDebug {{.CLI_ARGS}}"
+      - "adb shell am start -n {{.PACKAGE}}/{{.ACTIVITY}}"
+
+  gradle-status:
+    desc: Gradle daemon status
+    cmd: "{{.GRADLEW}} --status"
+
+  gradle-stop:
+    desc: Stop Gradle daemons
+    cmd: "{{.GRADLEW}} --stop"
+
+  clear:
+    desc: Clear Data
+    cmd: "adb {{.CLI_ARGS}} shell pm clear {{.PACKAGE}}"
+
+  uninstall:
+    desc: Uninstall App
+    cmd: "adb {{.CLI_ARGS}} shell pm uninstall {{.PACKAGE}}"
