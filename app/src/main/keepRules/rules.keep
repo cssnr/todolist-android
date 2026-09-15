@@ -10,3 +10,8 @@
 #-keepclassmembers class fqcn.of.javascript.interface.for.webview {
 #   public *;
 #}
+
+## Crash Reporting
+# Keep source file names and line numbers for readable stack traces (ACRA).
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile

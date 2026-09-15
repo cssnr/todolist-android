@@ -37,7 +37,7 @@ android {
     buildTypes {
         release {
             optimization {
-                enable = false
+                enable = true
             }
         }
         debug {
@@ -76,8 +76,12 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.acra.http)
-    implementation(libs.acra.toast)
+    implementation(libs.acra.http) {
+        exclude(group = "com.google.auto.service", module = "auto-service")
+    }
+    implementation(libs.acra.toast) {
+        exclude(group = "com.google.auto.service", module = "auto-service")
+    }
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
