@@ -78,4 +78,12 @@ class TodoListRepository(private val dao: TodoListDao) {
     suspend fun setHideCompleted(listId: Long, hideCompleted: Boolean) {
         dao.setHideCompleted(listId, hideCompleted)
     }
+
+    suspend fun crossAllItems(listId: Long) {
+        dao.setAllItemsDone(listId, done = true)
+    }
+
+    suspend fun uncrossAllItems(listId: Long) {
+        dao.setAllItemsDone(listId, done = false)
+    }
 }
