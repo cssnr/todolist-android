@@ -75,6 +75,8 @@ class TodoListRepository(private val dao: TodoListDao) {
         dao.deleteItem(item.id)
     }
 
+    suspend fun listCategories(listId: Long): List<String> = dao.listCategories(listId)
+
     suspend fun setHideCompleted(listId: Long, hideCompleted: Boolean) {
         dao.setHideCompleted(listId, hideCompleted)
     }

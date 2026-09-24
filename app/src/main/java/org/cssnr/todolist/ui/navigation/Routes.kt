@@ -13,3 +13,9 @@ data object Settings
 
 @Serializable
 data class ListDetail(val listId: Long)
+
+@Serializable
+data class ListImport(val listId: Long)
+
+@Serializable
+data class ListExport(val listId: Long)

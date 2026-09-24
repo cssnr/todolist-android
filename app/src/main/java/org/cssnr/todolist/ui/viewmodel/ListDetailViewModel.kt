@@ -27,6 +27,26 @@ import org.cssnr.todolist.data.TodoListEntity
 import org.cssnr.todolist.data.TodoListRepository
 import kotlin.time.Duration.Companion.milliseconds
 
+private const val UNCATEGORIZED = "Uncategorized"
+
+private fun parseItemsForImport(text: String): List<Pair<String, String?>> = buildList {
+    var category: String? = null
+    for (rawLine in text.lineSequence()) {
+        val line = rawLine.trim()
+        if (line.isEmpty()) continue
+        if (line.startsWith("# ")) {
+            val heading = line.removePrefix("# ").trim()
+            category = if (heading.isEmpty() || heading.equals(UNCATEGORIZED, ignoreCase = true)) {
+                null
+            } else {
+                heading
+            }
+        } else {
+            add(line to category)
+        }
+    }
+}
+
 class ListDetailViewModel(
     application: Application,
     private val listId: Long,
@@ -130,6 +150,24 @@ class ListDetailViewModel(
         viewModelScope.launch {
             repository.uncrossAllItems(listId)
         }
+    }
+
+    fun importItems(text: String): Int {
+        val parsed = parseItemsForImport(text)
+        viewModelScope.launch {
+            val existingCategories = repository.listCategories(listId) +
+                parsed.mapNotNull { it.second }
+            val categoryByName = existingCategories
+                .distinctBy { it.lowercase() }
+                .associateBy { it.lowercase() }
+            for ((itemText, category) in parsed) {
+                val resolvedCategory = category?.let {
+                    categoryByName[it.lowercase()] ?: it
+                }
+                repository.addItem(listId, itemText, resolvedCategory)
+            }
+        }
+        return parsed.size
     }
 
     companion object {
