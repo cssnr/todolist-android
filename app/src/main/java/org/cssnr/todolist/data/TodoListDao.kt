@@ -20,6 +20,9 @@ interface TodoListDao {
     @Query("SELECT * FROM todo_items WHERE listId = :listId AND LOWER(text) = LOWER(:text) LIMIT 1")
     suspend fun findItem(listId: Long, text: String): TodoItemEntity?
 
+    @Query("SELECT DISTINCT category FROM todo_items WHERE listId = :listId AND category IS NOT NULL")
+    suspend fun listCategories(listId: Long): List<String>
+
     @Insert
     suspend fun insert(list: TodoListEntity): Long
 

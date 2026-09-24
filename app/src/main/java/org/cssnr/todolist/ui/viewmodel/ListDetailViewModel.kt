@@ -132,6 +132,24 @@ class ListDetailViewModel(
         }
     }
 
+    fun importItems(text: String): Int {
+        val parsed = parseItemsForImport(text)
+        viewModelScope.launch {
+            val existingCategories = repository.listCategories(listId) +
+                parsed.mapNotNull { it.second }
+            val categoryByName = existingCategories
+                .distinctBy { it.lowercase() }
+                .associateBy { it.lowercase() }
+            for ((itemText, category) in parsed) {
+                val resolvedCategory = category?.let {
+                    categoryByName[it.lowercase()] ?: it
+                }
+                repository.addItem(listId, itemText, resolvedCategory)
+            }
+        }
+        return parsed.size
+    }
+
     companion object {
         fun factory(listId: Long): ViewModelProvider.Factory = viewModelFactory {
             initializer {

@@ -33,6 +33,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -127,7 +128,7 @@ private fun groupItems(items: List<TodoItemEntity>): List<ItemRow> = buildList {
     var lastCategory: String? = null
     for (item in items) {
         val category = item.category ?: UNCATEGORIZED
-        if (category != lastCategory) {
+        if (!category.equals(lastCategory, ignoreCase = true)) {
             add(ItemRow.Header(category))
             lastCategory = category
         }
@@ -155,6 +156,8 @@ private fun CategoryHeader(title: String) {
 fun ListDetailRoute(
     listId: Long,
     onBack: () -> Unit,
+    onOpenImport: () -> Unit,
+    onOpenExport: () -> Unit,
     onLoaded: () -> Unit = {},
     viewModel: ListDetailViewModel = viewModel(
         factory = ListDetailViewModel.factory(listId),
@@ -179,6 +182,8 @@ fun ListDetailRoute(
         onBack = onBack,
         onQueryChange = viewModel::setQuery,
         onAddItem = viewModel::addItem,
+        onOpenImport = onOpenImport,
+        onOpenExport = onOpenExport,
         onToggleItem = viewModel::toggleItem,
         onUpdateItem = viewModel::updateItem,
         onDeleteItem = viewModel::deleteItem,
@@ -199,6 +204,8 @@ fun ListDetailScreen(
     onBack: () -> Unit,
     onQueryChange: (String) -> Unit,
     onAddItem: (text: String, category: String?) -> Unit,
+    onOpenImport: () -> Unit,
+    onOpenExport: () -> Unit,
     onToggleItem: (TodoItemEntity) -> Unit,
     onUpdateItem: (TodoItemEntity, String) -> Unit,
     onDeleteItem: (TodoItemEntity) -> Unit,
@@ -297,6 +304,21 @@ fun ListDetailScreen(
                                 onClick = {
                                     menuExpanded = false
                                     pendingAction = BulkAction.Uncross
+                                },
+                            )
+                            HorizontalDivider()
+                            DropdownMenuItem(
+                                text = { Text("Import Items") },
+                                onClick = {
+                                    menuExpanded = false
+                                    onOpenImport()
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Export Items") },
+                                onClick = {
+                                    menuExpanded = false
+                                    onOpenExport()
                                 },
                             )
                         }
@@ -695,6 +717,8 @@ fun ListDetailScreenPreview() {
             onBack = {},
             onQueryChange = {},
             onAddItem = { _, _ -> },
+            onOpenImport = {},
+            onOpenExport = {},
             onToggleItem = {},
             onUpdateItem = { _, _ -> },
             onDeleteItem = {},
@@ -741,6 +765,8 @@ fun ListDetailScreenItemsPreview() {
             onBack = {},
             onQueryChange = {},
             onAddItem = { _, _ -> },
+            onOpenImport = {},
+            onOpenExport = {},
             onToggleItem = {},
             onUpdateItem = { _, _ -> },
             onDeleteItem = {},

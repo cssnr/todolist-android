@@ -38,9 +38,13 @@ import androidx.navigation.navigation
 import androidx.navigation.toRoute
 import kotlinx.coroutines.delay
 import org.cssnr.todolist.ui.navigation.ListDetail
+import org.cssnr.todolist.ui.navigation.ListExport
+import org.cssnr.todolist.ui.navigation.ListImport
 import org.cssnr.todolist.ui.navigation.Lists
 import org.cssnr.todolist.ui.navigation.ListsSection
 import org.cssnr.todolist.ui.navigation.Settings
+import org.cssnr.todolist.ui.screens.ExportItemsRoute
+import org.cssnr.todolist.ui.screens.ImportItemsRoute
 import org.cssnr.todolist.ui.screens.ListDetailRoute
 import org.cssnr.todolist.ui.screens.ListsRoute
 import org.cssnr.todolist.ui.screens.SettingsRoute
@@ -66,6 +70,9 @@ fun TodoListApp() {
     val startupScreen by startupViewModel.startupScreen.collectAsStateWithLifecycle()
     var listsLoaded by remember { mutableStateOf(false) }
     var detailLoaded by remember { mutableStateOf(false) }
+
+    val isFullPageTool = currentDestination?.hasRoute<ListImport>() == true ||
+        currentDestination?.hasRoute<ListExport>() == true
 
     var autoOpened by rememberSaveable { mutableStateOf(false) }
     var suppressListDetailTransition by remember { mutableStateOf(false) }
@@ -97,46 +104,48 @@ fun TodoListApp() {
         contentWindowInsets = ScaffoldDefaults.contentWindowInsets
             .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom),
         bottomBar = {
-            NavigationBar {
-                Destination.entries.forEach { destination ->
-                    val selected = currentDestination?.hierarchy
-                        ?.any { it.hasRoute(destination.route::class) } == true
-                    NavigationBarItem(
-                        selected = selected,
-                        onClick = {
-                            when (destination) {
-                                Destination.LISTS -> {
-                                    if (currentDestination?.hasRoute<Lists>() != true) {
-                                        val poppedSettings = navController
-                                            .popBackStack<Settings>(inclusive = true)
-                                        if (!poppedSettings) {
-                                            navController.navigate(Lists) {
-                                                popUpTo(navController.graph.findStartDestination().id)
+            if (!isFullPageTool) {
+                NavigationBar {
+                    Destination.entries.forEach { destination ->
+                        val selected = currentDestination?.hierarchy
+                            ?.any { it.hasRoute(destination.route::class) } == true
+                        NavigationBarItem(
+                            selected = selected,
+                            onClick = {
+                                when (destination) {
+                                    Destination.LISTS -> {
+                                        if (currentDestination?.hasRoute<Lists>() != true) {
+                                            val poppedSettings = navController
+                                                .popBackStack<Settings>(inclusive = true)
+                                            if (!poppedSettings) {
+                                                navController.navigate(Lists) {
+                                                    popUpTo(navController.graph.findStartDestination().id)
+                                                    launchSingleTop = true
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    Destination.SETTINGS -> {
+                                        val popped = navController
+                                            .popBackStack<Settings>(inclusive = false)
+                                        if (!popped) {
+                                            navController.navigate(destination.route) {
                                                 launchSingleTop = true
                                             }
                                         }
                                     }
                                 }
-
-                                Destination.SETTINGS -> {
-                                    val popped = navController
-                                        .popBackStack<Settings>(inclusive = false)
-                                    if (!popped) {
-                                        navController.navigate(destination.route) {
-                                            launchSingleTop = true
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        icon = {
-                            Icon(
-                                imageVector = destination.icon,
-                                contentDescription = destination.label,
-                            )
-                        },
-                        label = { Text(destination.label) },
-                    )
+                            },
+                            icon = {
+                                Icon(
+                                    imageVector = destination.icon,
+                                    contentDescription = destination.label,
+                                )
+                            },
+                            label = { Text(destination.label) },
+                        )
+                    }
                 }
             }
         },
@@ -201,7 +210,23 @@ fun TodoListApp() {
                     ListDetailRoute(
                         listId = detail.listId,
                         onBack = { navController.navigateUp() },
+                        onOpenImport = { navController.navigate(ListImport(detail.listId)) },
+                        onOpenExport = { navController.navigate(ListExport(detail.listId)) },
                         onLoaded = { detailLoaded = true },
+                    )
+                }
+                composable<ListImport> { backStackEntry ->
+                    val importRoute = backStackEntry.toRoute<ListImport>()
+                    ImportItemsRoute(
+                        listId = importRoute.listId,
+                        onBack = { navController.navigateUp() },
+                    )
+                }
+                composable<ListExport> { backStackEntry ->
+                    val exportRoute = backStackEntry.toRoute<ListExport>()
+                    ExportItemsRoute(
+                        listId = exportRoute.listId,
+                        onBack = { navController.navigateUp() },
                     )
                 }
             }
