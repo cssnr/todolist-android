@@ -146,7 +146,7 @@ private fun CategoryHeader(title: String) {
         modifier = Modifier
             .fillMaxWidth()
             .background(color = MaterialTheme.colorScheme.surfaceVariant)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = 16.dp, vertical = 4.dp),
     ) {
         Text(
             text = title,
