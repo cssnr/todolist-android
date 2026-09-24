@@ -168,6 +168,7 @@ fun ListDetailRoute(
     val query by viewModel.query.collectAsStateWithLifecycle()
     val suggestions by viewModel.suggestions.collectAsStateWithLifecycle()
     val showSearchCategories by viewModel.showSearchCategories.collectAsStateWithLifecycle()
+    val fullWidthStrikethrough by viewModel.fullWidthStrikethrough.collectAsStateWithLifecycle()
 
     LaunchedEffect(list) {
         if (list != null) onLoaded()
@@ -179,6 +180,7 @@ fun ListDetailRoute(
         query = query,
         suggestions = suggestions,
         showSearchCategories = showSearchCategories,
+        fullWidthStrikethrough = fullWidthStrikethrough,
         onBack = onBack,
         onQueryChange = viewModel::setQuery,
         onAddItem = viewModel::addItem,
@@ -201,6 +203,7 @@ fun ListDetailScreen(
     query: String,
     suggestions: List<CatalogSuggestion>,
     showSearchCategories: Boolean,
+    fullWidthStrikethrough: Boolean,
     onBack: () -> Unit,
     onQueryChange: (String) -> Unit,
     onAddItem: (text: String, category: String?) -> Unit,
@@ -486,7 +489,13 @@ fun ListDetailScreen(
                                                 headlineContent = {
                                                     Text(
                                                         modifier = Modifier
-                                                            .fillMaxWidth()
+                                                            .then(
+                                                                if (fullWidthStrikethrough) {
+                                                                    Modifier.fillMaxWidth()
+                                                                } else {
+                                                                    Modifier
+                                                                },
+                                                            )
                                                             .then(
                                                                 if (item.done) {
                                                                     Modifier.drawBehind {
@@ -714,6 +723,7 @@ fun ListDetailScreenPreview() {
             query = "",
             suggestions = emptyList(),
             showSearchCategories = true,
+            fullWidthStrikethrough = false,
             onBack = {},
             onQueryChange = {},
             onAddItem = { _, _ -> },
@@ -762,6 +772,7 @@ fun ListDetailScreenItemsPreview() {
             query = "",
             suggestions = emptyList(),
             showSearchCategories = true,
+            fullWidthStrikethrough = false,
             onBack = {},
             onQueryChange = {},
             onAddItem = { _, _ -> },

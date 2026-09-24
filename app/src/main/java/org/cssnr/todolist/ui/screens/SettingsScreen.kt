@@ -12,10 +12,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.FormatStrikethrough
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -31,27 +33,27 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.cssnr.todolist.R
 import org.cssnr.todolist.ui.theme.TodoListTheme
+import org.cssnr.todolist.ui.viewmodel.SettingsState
 import org.cssnr.todolist.ui.viewmodel.SettingsViewModel
 
 @Composable
 fun SettingsRoute(viewModel: SettingsViewModel = viewModel()) {
     val context = LocalContext.current
     val acraInfoLink = stringResource(R.string.acra_info_link)
-    val autoOpenLastList by viewModel.autoOpenLastList.collectAsStateWithLifecycle()
-    val showSearchCategories by viewModel.showSearchCategories.collectAsStateWithLifecycle()
-    val crashReporting by viewModel.crashReporting.collectAsStateWithLifecycle()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
 
+    val current = settings ?: return
     SettingsScreen(
-        autoOpenLastList = autoOpenLastList,
+        settings = current,
         onAutoOpenLastListChange = viewModel::setAutoOpenLastList,
-        showSearchCategories = showSearchCategories,
         onShowSearchCategoriesChange = viewModel::setShowSearchCategories,
-        crashReporting = crashReporting,
+        onFullWidthStrikethroughChange = viewModel::setFullWidthStrikethrough,
         onCrashReportingChange = viewModel::setCrashReporting,
         onCrashReportingMoreInfo = {
             context.startActivity(
@@ -64,11 +66,10 @@ fun SettingsRoute(viewModel: SettingsViewModel = viewModel()) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    autoOpenLastList: Boolean,
+    settings: SettingsState,
     onAutoOpenLastListChange: (Boolean) -> Unit,
-    showSearchCategories: Boolean,
     onShowSearchCategoriesChange: (Boolean) -> Unit,
-    crashReporting: Boolean,
+    onFullWidthStrikethroughChange: (Boolean) -> Unit,
     onCrashReportingChange: (Boolean) -> Unit,
     onCrashReportingMoreInfo: () -> Unit,
 ) {
@@ -83,25 +84,34 @@ fun SettingsScreen(
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState()),
         ) {
+            SettingsSectionHeader("Application")
             SettingToggleRow(
                 leadingIcon = Icons.AutoMirrored.Filled.ExitToApp,
                 title = "Auto Open Last List",
                 subtitle = "Open your last list on launch",
-                checked = autoOpenLastList,
+                checked = settings.autoOpenLastList,
                 onToggle = onAutoOpenLastListChange,
             )
             SettingToggleRow(
                 leadingIcon = Icons.Filled.Category,
                 title = "Show Search Categories",
                 subtitle = "Show categories in suggestions",
-                checked = showSearchCategories,
+                checked = settings.showSearchCategories,
                 onToggle = onShowSearchCategoriesChange,
             )
+            SettingToggleRow(
+                leadingIcon = Icons.Filled.FormatStrikethrough,
+                title = "Full Width Strikethrough",
+                subtitle = "Strike line across the whole row",
+                checked = settings.fullWidthStrikethrough,
+                onToggle = onFullWidthStrikethroughChange,
+            )
+            SettingsSectionHeader("Debugging")
             SettingToggleRow(
                 leadingIcon = Icons.Filled.BugReport,
                 title = "Enable Crash Reporting",
                 subtitle = "Send Crash Reports",
-                checked = crashReporting,
+                checked = settings.crashReporting,
                 onToggle = { newValue ->
                     if (newValue) {
                         onCrashReportingChange(true)
@@ -143,6 +153,16 @@ fun SettingsScreen(
 }
 
 @Composable
+private fun SettingsSectionHeader(title: String) {
+    Text(
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        text = title,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+    )
+}
+
+@Composable
 private fun SettingToggleRow(
     leadingIcon: ImageVector,
     title: String,
@@ -176,11 +196,15 @@ private fun SettingToggleRow(
 fun SettingsScreenPreview() {
     TodoListTheme {
         SettingsScreen(
-            autoOpenLastList = true,
+            settings = SettingsState(
+                autoOpenLastList = true,
+                showSearchCategories = true,
+                fullWidthStrikethrough = false,
+                crashReporting = true,
+            ),
             onAutoOpenLastListChange = {},
-            showSearchCategories = true,
             onShowSearchCategoriesChange = {},
-            crashReporting = true,
+            onFullWidthStrikethroughChange = {},
             onCrashReportingChange = {},
             onCrashReportingMoreInfo = {},
         )
