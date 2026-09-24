@@ -22,6 +22,7 @@ class SettingsRepository(private val context: Context) {
         val AUTO_OPEN_LAST_LIST = booleanPreferencesKey("auto_open_last_list")
         val LAST_OPENED_LIST_ID = longPreferencesKey("last_opened_list_id")
         val SHOW_SEARCH_CATEGORIES = booleanPreferencesKey("show_search_categories")
+        val FULL_WIDTH_STRIKETHROUGH = booleanPreferencesKey("full_width_strikethrough")
         const val CRASH_REPORTING = "acra.enable"
     }
 
@@ -37,6 +38,9 @@ class SettingsRepository(private val context: Context) {
 
     val showSearchCategories: Flow<Boolean> = context.settingsDataStore.data
         .map { preferences -> preferences[Keys.SHOW_SEARCH_CATEGORIES] ?: true }
+
+    val fullWidthStrikethrough: Flow<Boolean> = context.settingsDataStore.data
+        .map { preferences -> preferences[Keys.FULL_WIDTH_STRIKETHROUGH] ?: false }
 
     val crashReporting: Flow<Boolean> = callbackFlow {
         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
@@ -58,6 +62,12 @@ class SettingsRepository(private val context: Context) {
     suspend fun setShowSearchCategories(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
             preferences[Keys.SHOW_SEARCH_CATEGORIES] = enabled
+        }
+    }
+
+    suspend fun setFullWidthStrikethrough(enabled: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[Keys.FULL_WIDTH_STRIKETHROUGH] = enabled
         }
     }
 

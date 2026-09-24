@@ -80,6 +80,13 @@ class ListDetailViewModel(
             initialValue = true,
         )
 
+    val fullWidthStrikethrough: StateFlow<Boolean> = settingsRepository.fullWidthStrikethrough
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = false,
+        )
+
     init {
         viewModelScope.launch {
             catalogRepository.ensureSeeded()
