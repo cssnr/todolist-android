@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.Delete
@@ -36,7 +38,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -269,10 +274,17 @@ private fun RenameListDialog(
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit,
 ) {
-    var name by rememberSaveable(list.id) { mutableStateOf(list.name) }
-    val trimmedName = name.trim()
+    val textState = rememberTextFieldState(initialText = list.name)
+    val trimmedName = textState.text.toString().trim()
     val nameTaken = trimmedName.isNotEmpty() && lists.any {
         it.id != list.id && it.name.equals(trimmedName, ignoreCase = true)
+    }
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+        keyboardController?.show()
     }
 
     AlertDialog(
@@ -280,10 +292,10 @@ private fun RenameListDialog(
         title = { Text("Rename list") },
         text = {
             OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
+                state = textState,
+                modifier = Modifier.focusRequester(focusRequester),
                 label = { Text("Name") },
-                singleLine = true,
+                lineLimits = TextFieldLineLimits.SingleLine,
                 isError = nameTaken,
                 supportingText = if (nameTaken) {
                     { Text("A list with this name already exists") }
