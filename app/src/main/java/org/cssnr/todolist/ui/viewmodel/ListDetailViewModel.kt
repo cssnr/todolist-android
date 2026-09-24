@@ -27,26 +27,6 @@ import org.cssnr.todolist.data.TodoListEntity
 import org.cssnr.todolist.data.TodoListRepository
 import kotlin.time.Duration.Companion.milliseconds
 
-private const val UNCATEGORIZED = "Uncategorized"
-
-private fun parseItemsForImport(text: String): List<Pair<String, String?>> = buildList {
-    var category: String? = null
-    for (rawLine in text.lineSequence()) {
-        val line = rawLine.trim()
-        if (line.isEmpty()) continue
-        if (line.startsWith("# ")) {
-            val heading = line.removePrefix("# ").trim()
-            category = if (heading.isEmpty() || heading.equals(UNCATEGORIZED, ignoreCase = true)) {
-                null
-            } else {
-                heading
-            }
-        } else {
-            add(line to category)
-        }
-    }
-}
-
 class ListDetailViewModel(
     application: Application,
     private val listId: Long,
