@@ -1,9 +1,12 @@
 package org.cssnr.todolist.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -11,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -37,6 +41,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -54,6 +59,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -202,6 +208,11 @@ fun ListDetailScreen(
     modifier: Modifier = Modifier,
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    BackHandler(enabled = expanded) {
+        expanded = false
+        keyboardController?.hide()
+    }
     var editingItem by remember { mutableStateOf<TodoItemEntity?>(null) }
     var menuExpanded by rememberSaveable { mutableStateOf(false) }
     var pendingAction by rememberSaveable { mutableStateOf<BulkAction?>(null) }
@@ -318,6 +329,7 @@ fun ListDetailScreen(
                                 onAddItem(query.trim(), null)
                                 onQueryChange("")
                                 expanded = false
+                                keyboardController?.hide()
                             }
                         },
                         expanded = expanded,
@@ -328,6 +340,7 @@ fun ListDetailScreen(
                                 IconButton(onClick = {
                                     onQueryChange("")
                                     expanded = false
+                                    keyboardController?.hide()
                                 }) {
                                     Icon(
                                         imageVector = Icons.Filled.Close,
@@ -338,89 +351,19 @@ fun ListDetailScreen(
                         },
                     )
                 },
-                expanded = expanded,
+                expanded = false,
                 onExpandedChange = { expanded = it && query.isNotBlank() },
             ) {
-                when {
-                    query.isBlank() -> {
-                        Text(
-                            text = "Start typing to see suggestions",
-                            modifier = Modifier.padding(16.dp),
-                        )
-                    }
-
-                    else -> {
-                        val rows = remember(query, suggestions, showSearchCategories) {
-                            groupSuggestions(query, suggestions, showSearchCategories)
-                        }
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(max = 320.dp),
-                        ) {
-                            items(
-                                rows,
-                                key = { row ->
-                                    when (row) {
-                                        is SuggestionRow.Exact -> "exact"
-                                        is SuggestionRow.Header -> "header-${row.title}"
-                                        is SuggestionRow.Suggestion -> "suggestion-${row.suggestion.id}"
-                                    }
-                                },
-                            ) { row ->
-                                when (row) {
-                                    is SuggestionRow.Exact -> ListItem(
-                                        headlineContent = { Text(row.text) },
-                                        trailingContent = {
-                                            Icon(
-                                                imageVector = Icons.Filled.Add,
-                                                contentDescription = null,
-                                            )
-                                        },
-                                        modifier = Modifier
-                                            .clickable {
-                                                onAddItem(row.text, null)
-                                                onQueryChange("")
-                                                expanded = false
-                                            }
-                                            .fillMaxWidth(),
-                                    )
-
-                                    is SuggestionRow.Header -> CategoryHeader(row.title)
-                                    is SuggestionRow.Suggestion -> ListItem(
-                                        headlineContent = { Text(row.suggestion.name) },
-                                        trailingContent = {
-                                            Icon(
-                                                imageVector = Icons.Filled.Add,
-                                                contentDescription = null,
-                                            )
-                                        },
-                                        modifier = Modifier
-                                            .clickable {
-                                                onAddItem(
-                                                    row.suggestion.name,
-                                                    row.suggestion.categoryName
-                                                )
-                                                onQueryChange("")
-                                                expanded = false
-                                            }
-                                            .fillMaxWidth(),
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
             }
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .padding(top = 8.dp),
+                    .padding(top = 8.dp)
+                    .imePadding(),
             ) {
                 when {
-                    expanded -> Unit
                     items.isEmpty() -> {
                         Column(
                             modifier = Modifier.fillMaxSize(),
@@ -553,6 +496,90 @@ fun ListDetailScreen(
                                                 },
                                             )
                                         }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if (expanded) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.24f))
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                            ) {
+                                expanded = false
+                                keyboardController?.hide()
+                            },
+                    )
+                    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp)
+                                .heightIn(max = maxHeight),
+                            shape = MaterialTheme.shapes.extraLarge,
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                            shadowElevation = 6.dp,
+                        ) {
+                            val rows = remember(query, suggestions, showSearchCategories) {
+                                groupSuggestions(query, suggestions, showSearchCategories)
+                            }
+                            LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                                items(
+                                    rows,
+                                    key = { row ->
+                                        when (row) {
+                                            is SuggestionRow.Exact -> "exact"
+                                            is SuggestionRow.Header -> "header-${row.title}"
+                                            is SuggestionRow.Suggestion -> "suggestion-${row.suggestion.id}"
+                                        }
+                                    },
+                                ) { row ->
+                                    when (row) {
+                                        is SuggestionRow.Exact -> ListItem(
+                                            headlineContent = { Text(row.text) },
+                                            trailingContent = {
+                                                Icon(
+                                                    imageVector = Icons.Filled.Add,
+                                                    contentDescription = null,
+                                                )
+                                            },
+                                            modifier = Modifier
+                                                .clickable {
+                                                    onAddItem(row.text, null)
+                                                    onQueryChange("")
+                                                    expanded = false
+                                                    keyboardController?.hide()
+                                                }
+                                                .fillMaxWidth(),
+                                        )
+
+                                        is SuggestionRow.Header -> CategoryHeader(row.title)
+                                        is SuggestionRow.Suggestion -> ListItem(
+                                            headlineContent = { Text(row.suggestion.name) },
+                                            trailingContent = {
+                                                Icon(
+                                                    imageVector = Icons.Filled.Add,
+                                                    contentDescription = null,
+                                                )
+                                            },
+                                            modifier = Modifier
+                                                .clickable {
+                                                    onAddItem(
+                                                        row.suggestion.name,
+                                                        row.suggestion.categoryName
+                                                    )
+                                                    onQueryChange("")
+                                                    expanded = false
+                                                    keyboardController?.hide()
+                                                }
+                                                .fillMaxWidth(),
+                                        )
                                     }
                                 }
                             }
