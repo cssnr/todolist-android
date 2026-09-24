@@ -224,6 +224,7 @@ fun ListDetailScreen(
         keyboardController?.hide()
     }
     var editingItem by remember { mutableStateOf<TodoItemEntity?>(null) }
+    var pendingDeleteItem by remember { mutableStateOf<TodoItemEntity?>(null) }
     var menuExpanded by rememberSaveable { mutableStateOf(false) }
     var pendingAction by rememberSaveable { mutableStateOf<BulkAction?>(null) }
     val hideCompleted = list?.hideCompleted ?: false
@@ -250,6 +251,18 @@ fun ListDetailScreen(
                     BulkAction.Uncross -> onUncrossAllItems()
                 }
                 pendingAction = null
+            },
+        )
+    }
+
+    pendingDeleteItem?.let { item ->
+        ConfirmActionDialog(
+            title = "Delete item",
+            message = "Are you sure you want to delete \"${item.text}\"?",
+            onDismiss = { pendingDeleteItem = null },
+            onConfirm = {
+                onDeleteItem(item)
+                pendingDeleteItem = null
             },
         )
     }
@@ -478,7 +491,7 @@ fun ListDetailScreen(
                                                         label = "Delete",
                                                         onClick = {
                                                             revealScope.launch { revealState.reset() }
-                                                            onDeleteItem(row.item)
+                                                            pendingDeleteItem = row.item
                                                         },
                                                     )
                                                 }
@@ -623,7 +636,7 @@ fun ListDetailScreen(
 }
 
 @Composable
-private fun SwipeActionButton(
+internal fun SwipeActionButton(
     modifier: Modifier = Modifier,
     background: Color,
     contentColor: Color,
@@ -654,7 +667,7 @@ private fun SwipeActionButton(
 }
 
 @Composable
-private fun ConfirmActionDialog(
+internal fun ConfirmActionDialog(
     title: String,
     message: String,
     onDismiss: () -> Unit,

@@ -75,6 +75,17 @@ class TodoListRepository(private val dao: TodoListDao) {
         dao.deleteItem(item.id)
     }
 
+    suspend fun deleteList(list: TodoListEntity) {
+        dao.delete(list)
+    }
+
+    suspend fun renameList(list: TodoListEntity, newName: String) {
+        val name = newName.trim()
+        if (name.isNotEmpty() && name != list.name) {
+            dao.renameList(list.id, name)
+        }
+    }
+
     suspend fun listCategories(listId: Long): List<String> = dao.listCategories(listId)
 
     suspend fun setHideCompleted(listId: Long, hideCompleted: Boolean) {
