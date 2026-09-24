@@ -43,4 +43,7 @@ interface TodoListDao {
 
     @Query("UPDATE todo_lists SET hideCompleted = :hideCompleted WHERE id = :id")
     suspend fun setHideCompleted(id: Long, hideCompleted: Boolean)
+
+    @Query("UPDATE todo_items SET done = :done WHERE listId = :listId")
+    suspend fun setAllItemsDone(listId: Long, done: Boolean)
 }

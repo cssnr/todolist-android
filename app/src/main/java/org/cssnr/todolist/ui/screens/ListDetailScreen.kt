@@ -20,11 +20,14 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -77,6 +80,17 @@ private sealed interface SuggestionRow {
 private sealed interface ItemRow {
     data class Header(val title: String) : ItemRow
     data class Item(val item: TodoItemEntity) : ItemRow
+}
+
+private enum class BulkAction(val label: String, val message: String) {
+    CrossOut(
+        label = "Cross Out All Items",
+        message = "This will mark every item in this list as done.",
+    ),
+    Uncross(
+        label = "Uncross All Items",
+        message = "This will mark every item in this list as not done.",
+    ),
 }
 
 private fun groupSuggestions(
@@ -163,6 +177,8 @@ fun ListDetailRoute(
         onUpdateItem = viewModel::updateItem,
         onDeleteItem = viewModel::deleteItem,
         onToggleHideCompleted = viewModel::setHideCompleted,
+        onCrossAllItems = viewModel::crossAllItems,
+        onUncrossAllItems = viewModel::uncrossAllItems,
     )
 }
 
@@ -181,10 +197,14 @@ fun ListDetailScreen(
     onUpdateItem: (TodoItemEntity, String) -> Unit,
     onDeleteItem: (TodoItemEntity) -> Unit,
     onToggleHideCompleted: (Boolean) -> Unit,
+    onCrossAllItems: () -> Unit,
+    onUncrossAllItems: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     var editingItem by remember { mutableStateOf<TodoItemEntity?>(null) }
+    var menuExpanded by rememberSaveable { mutableStateOf(false) }
+    var pendingAction by rememberSaveable { mutableStateOf<BulkAction?>(null) }
     val hideCompleted = list?.hideCompleted ?: false
 
     editingItem?.let { item ->
@@ -194,6 +214,21 @@ fun ListDetailScreen(
             onConfirm = { newText ->
                 onUpdateItem(item, newText)
                 editingItem = null
+            },
+        )
+    }
+
+    pendingAction?.let { action ->
+        ConfirmActionDialog(
+            title = action.label,
+            message = action.message,
+            onDismiss = { pendingAction = null },
+            onConfirm = {
+                when (action) {
+                    BulkAction.CrossOut -> onCrossAllItems()
+                    BulkAction.Uncross -> onUncrossAllItems()
+                }
+                pendingAction = null
             },
         )
     }
@@ -227,6 +262,33 @@ fun ListDetailScreen(
                                 "Hide completed items"
                             },
                         )
+                    }
+                    Box {
+                        IconButton(onClick = { menuExpanded = true }) {
+                            Icon(
+                                imageVector = Icons.Filled.MoreVert,
+                                contentDescription = "More options",
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = menuExpanded,
+                            onDismissRequest = { menuExpanded = false },
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Cross Out All Items") },
+                                onClick = {
+                                    menuExpanded = false
+                                    pendingAction = BulkAction.CrossOut
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Uncross All Items") },
+                                onClick = {
+                                    menuExpanded = false
+                                    pendingAction = BulkAction.Uncross
+                                },
+                            )
+                        }
                     }
                 },
             )
@@ -534,6 +596,30 @@ private fun SwipeActionButton(
 }
 
 @Composable
+private fun ConfirmActionDialog(
+    title: String,
+    message: String,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title) },
+        text = { Text(message) },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("Confirm")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+    )
+}
+
+@Composable
 private fun EditItemDialog(
     item: TodoItemEntity,
     onDismiss: () -> Unit,
@@ -586,6 +672,8 @@ fun ListDetailScreenPreview() {
             onUpdateItem = { _, _ -> },
             onDeleteItem = {},
             onToggleHideCompleted = {},
+            onCrossAllItems = {},
+            onUncrossAllItems = {},
         )
     }
 }
@@ -630,6 +718,8 @@ fun ListDetailScreenItemsPreview() {
             onUpdateItem = { _, _ -> },
             onDeleteItem = {},
             onToggleHideCompleted = {},
+            onCrossAllItems = {},
+            onUncrossAllItems = {},
         )
     }
 }

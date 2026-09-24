@@ -120,6 +120,18 @@ class ListDetailViewModel(
         }
     }
 
+    fun crossAllItems() {
+        viewModelScope.launch {
+            repository.crossAllItems(listId)
+        }
+    }
+
+    fun uncrossAllItems() {
+        viewModelScope.launch {
+            repository.uncrossAllItems(listId)
+        }
+    }
+
     companion object {
         fun factory(listId: Long): ViewModelProvider.Factory = viewModelFactory {
             initializer {
