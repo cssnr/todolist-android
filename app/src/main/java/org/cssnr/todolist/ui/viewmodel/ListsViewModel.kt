@@ -44,4 +44,16 @@ class ListsViewModel(application: Application) : AndroidViewModel(application) {
             repository.addList(name)
         }
     }
+
+    fun deleteList(list: TodoListEntity) {
+        viewModelScope.launch {
+            repository.deleteList(list)
+        }
+    }
+
+    fun renameList(list: TodoListEntity, newName: String) {
+        viewModelScope.launch {
+            repository.renameList(list, newName)
+        }
+    }
 }

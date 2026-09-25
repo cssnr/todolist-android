@@ -38,6 +38,9 @@ interface TodoListDao {
     @Query("UPDATE todo_items SET text = :text WHERE id = :id")
     suspend fun updateItemText(id: Long, text: String)
 
+    @Query("UPDATE todo_lists SET name = :name WHERE id = :id")
+    suspend fun renameList(id: Long, name: String)
+
     @Query("DELETE FROM todo_items WHERE id = :id")
     suspend fun deleteItem(id: Long)
 

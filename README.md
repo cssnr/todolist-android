@@ -1,7 +1,7 @@
 [![GitHub Downloads](https://img.shields.io/github/downloads/cssnr/todolist-android/total?logo=android)](https://github.com/cssnr/todolist-android/releases)
 [![GitHub Release Version](https://img.shields.io/github/v/release/cssnr/todolist-android?logo=github)](https://github.com/cssnr/todolist-android/releases/latest)
 [![APK Size](https://badges.cssnr.com/gh/release/cssnr/todolist-android/latest/asset/app-release.apk/size?label=apk&color=darkgreen)](https://github.com/cssnr/todolist-android/releases/latest/download/app-release.apk)
-[![AGP Version](https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcssnr%2Ftodolist-android%2Frefs%2Fheads%2Fmaster%2Fgradle%2Flibs.versions.toml&query=%24.versions.agp&logo=androidstudio&label=agp)](https://github.com/cssnr/todolist-android/blob/master/gradle/libs.versions.toml#L2)
+[![AGP Version](https://img.shields.io/badge/dynamic/toml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcssnr%2Ftodolist-android%2Frefs%2Fheads%2Fmaster%2Fgradle%2Flibs.versions.toml&query=%24.versions.agp&logo=androidstudio&logoColor=white&label=agp)](https://github.com/cssnr/todolist-android/blob/master/gradle/libs.versions.toml#L2)
 [![Gradle Version](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcssnr%2Ftodolist-android%2Fmaster%2Fgradle%2Fwrapper%2Fgradle-wrapper.properties&search=gradle-%28.%2B%3F%29-%28%3F%3Abin%7Call%29%5C.zip&replace=%241&logo=gradle&label=gradle)](https://github.com/cssnr/todolist-android/blob/master/gradle/wrapper/gradle-wrapper.properties#L4)
 [![Workflow Lint](https://img.shields.io/github/actions/workflow/status/cssnr/todolist-android/lint.yaml?logo=norton&logoColor=white&label=lint)](https://github.com/cssnr/todolist-android/actions/workflows/lint.yaml)
 [![Workflow Release](https://img.shields.io/github/actions/workflow/status/cssnr/todolist-android/release.yaml?logo=norton&logoColor=white&label=release)](https://github.com/cssnr/todolist-android/actions/workflows/release.yaml)
@@ -82,6 +82,14 @@ should take you to the settings area to allow installation if not already enable
 
 </details>
 
+_The GitHub APK has been registered with Google's [Android developer verification](https://developer.android.com/developer-verification)._
+
+```
+C0:1C:7D:6A:93:DD:5B:87:2C:0C:1E:F2:0B:D4:17:6D:41:D6:7C:97:4B:97:39:8F:21:97:73:84:D5:DD:6A:F1
+```
+
+[_How to Verify an APK Signature_](https://developer.android.com/tools/apksigner#usage-verify)
+
 ## Getting Started
 
 The app is ready to use as soon as it is installed — no account, login or setup required.
@@ -89,7 +97,7 @@ The app is ready to use as soon as it is installed — no account, login or setu
 1. [Install](#Install) and open the app.
 2. Tap the button to create your first list, for example "Groceries".
 3. Open the list and start typing in the search bar.
-4. Tap a suggestion to add an item to your list, or press enter to add any custom text.
+4. Tap a suggestion to add an item to your list, or press Enter to add any custom text.
 5. Single-tap an item to mark it as done; tap the eye icon to hide or show completed items.
 6. Swipe an item to the right to reveal Edit and Delete actions.
 
@@ -261,6 +269,8 @@ You can also star this project on GitHub and support other related projects:
 - [Zipline Android](https://github.com/cssnr/zipline-android?tab=readme-ov-file#readme)
 - [NOAA Weather Android](https://github.com/cssnr/noaa-weather-android?tab=readme-ov-file#readme)
 - [Remote Wallpaper Android](https://github.com/cssnr/remote-wallpaper-android?tab=readme-ov-file#readme)
+- [ParKing Android](https://github.com/cssnr/parking-android?tab=readme-ov-file#readme)
+- [Todo List Android](https://github.com/cssnr/todolist-android?tab=readme-ov-file#readme)
 - [Tibs3DPrints Android](https://github.com/cssnr/tibs3dprints-android?tab=readme-ov-file#readme)
 
 For a full list of current projects visit: [https://cssnr.github.io/](https://cssnr.github.io/)

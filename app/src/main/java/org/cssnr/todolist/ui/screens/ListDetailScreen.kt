@@ -18,6 +18,9 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -54,9 +57,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -67,8 +73,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import de.charlex.compose.RevealDirection
 import de.charlex.compose.RevealSwipe
+import de.charlex.compose.RevealValue
 import de.charlex.compose.rememberRevealState
 import de.charlex.compose.reset
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import org.cssnr.todolist.data.CatalogSuggestion
 import org.cssnr.todolist.data.TodoItemEntity
@@ -142,7 +150,7 @@ private fun CategoryHeader(title: String) {
         modifier = Modifier
             .fillMaxWidth()
             .background(color = MaterialTheme.colorScheme.surfaceVariant)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = 16.dp, vertical = 4.dp),
     ) {
         Text(
             text = title,
@@ -224,8 +232,10 @@ fun ListDetailScreen(
         keyboardController?.hide()
     }
     var editingItem by remember { mutableStateOf<TodoItemEntity?>(null) }
+    var pendingDeleteItem by remember { mutableStateOf<TodoItemEntity?>(null) }
     var menuExpanded by rememberSaveable { mutableStateOf(false) }
     var pendingAction by rememberSaveable { mutableStateOf<BulkAction?>(null) }
+    var revealedItemId by remember { mutableStateOf<Long?>(null) }
     val hideCompleted = list?.hideCompleted ?: false
 
     editingItem?.let { item ->
@@ -250,6 +260,18 @@ fun ListDetailScreen(
                     BulkAction.Uncross -> onUncrossAllItems()
                 }
                 pendingAction = null
+            },
+        )
+    }
+
+    pendingDeleteItem?.let { item ->
+        ConfirmActionDialog(
+            title = "Delete item",
+            message = "Are you sure you want to delete \"${item.text}\"?",
+            onDismiss = { pendingDeleteItem = null },
+            onConfirm = {
+                onDeleteItem(item)
+                pendingDeleteItem = null
             },
         )
     }
@@ -418,15 +440,15 @@ fun ListDetailScreen(
                     else -> {
                         val rows = remember(visibleItems) { groupItems(visibleItems) }
                         LazyColumn(modifier = Modifier.fillMaxSize()) {
-                            items(
+                            itemsIndexed(
                                 rows,
-                                key = { row ->
+                                key = { _, row ->
                                     when (row) {
                                         is ItemRow.Header -> "header-${row.title}"
                                         is ItemRow.Item -> "item-${row.item.id}"
                                     }
                                 },
-                            ) { row ->
+                            ) { index, row ->
                                 when (row) {
                                     is ItemRow.Header -> CategoryHeader(row.title)
                                     is ItemRow.Item -> {
@@ -436,6 +458,27 @@ fun ListDetailScreen(
                                             maxRevealDp = 160.dp,
                                             directions = setOf(RevealDirection.StartToEnd),
                                         )
+                                        LaunchedEffect(revealState) {
+                                            snapshotFlow { revealState.anchoredDraggableState.currentValue }
+                                                .distinctUntilChanged()
+                                                .collect { value ->
+                                                    if (value != RevealValue.Default) {
+                                                        revealedItemId = row.item.id
+                                                    } else if (revealedItemId == row.item.id) {
+                                                        revealedItemId = null
+                                                    }
+                                                }
+                                        }
+                                        LaunchedEffect(revealedItemId) {
+                                            if (revealedItemId != row.item.id &&
+                                                revealState.anchoredDraggableState.currentValue != RevealValue.Default
+                                            ) {
+                                                revealState.reset()
+                                            }
+                                        }
+                                        val showDividerBelow = index + 1 < rows.size &&
+                                            rows[index + 1] is ItemRow.Item
+                                        Column {
                                         RevealSwipe(
                                             modifier = Modifier.fillMaxWidth(),
                                             state = revealState,
@@ -478,7 +521,7 @@ fun ListDetailScreen(
                                                         label = "Delete",
                                                         onClick = {
                                                             revealScope.launch { revealState.reset() }
-                                                            onDeleteItem(row.item)
+                                                            pendingDeleteItem = row.item
                                                         },
                                                     )
                                                 }
@@ -526,6 +569,12 @@ fun ListDetailScreen(
                                                     )
                                                 },
                                             )
+                                        }
+                                        if (showDividerBelow) {
+                                            HorizontalDivider(
+                                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                            )
+                                        }
                                         }
                                     }
                                 }
@@ -623,7 +672,7 @@ fun ListDetailScreen(
 }
 
 @Composable
-private fun SwipeActionButton(
+internal fun SwipeActionButton(
     modifier: Modifier = Modifier,
     background: Color,
     contentColor: Color,
@@ -654,7 +703,7 @@ private fun SwipeActionButton(
 }
 
 @Composable
-private fun ConfirmActionDialog(
+internal fun ConfirmActionDialog(
     title: String,
     message: String,
     onDismiss: () -> Unit,
@@ -683,18 +732,25 @@ private fun EditItemDialog(
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit,
 ) {
-    var text by rememberSaveable(item.id) { mutableStateOf(item.text) }
-    val trimmedText = text.trim()
+    val textState = rememberTextFieldState(initialText = item.text)
+    val trimmedText = textState.text.toString().trim()
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+        keyboardController?.show()
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Edit item") },
         text = {
             OutlinedTextField(
-                value = text,
-                onValueChange = { text = it },
+                state = textState,
+                modifier = Modifier.focusRequester(focusRequester),
                 label = { Text("Item") },
-                singleLine = true,
+                lineLimits = TextFieldLineLimits.SingleLine,
             )
         },
         confirmButton = {
