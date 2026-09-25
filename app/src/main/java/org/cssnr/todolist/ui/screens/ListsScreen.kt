@@ -38,6 +38,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -53,6 +54,7 @@ import de.charlex.compose.RevealSwipe
 import de.charlex.compose.RevealValue
 import de.charlex.compose.rememberRevealState
 import de.charlex.compose.reset
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import org.cssnr.todolist.data.TodoListEntity
 import org.cssnr.todolist.ui.theme.TodoListTheme
@@ -96,6 +98,7 @@ fun ListsScreen(
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
     var pendingRenameList by remember { mutableStateOf<TodoListEntity?>(null) }
     var pendingDeleteList by remember { mutableStateOf<TodoListEntity?>(null) }
+    var revealedListId by remember { mutableStateOf<Long?>(null) }
 
     Scaffold(
         modifier = modifier,
@@ -136,6 +139,24 @@ fun ListsScreen(
                         maxRevealDp = 160.dp,
                         directions = setOf(RevealDirection.StartToEnd),
                     )
+                    LaunchedEffect(revealState) {
+                        snapshotFlow { revealState.anchoredDraggableState.currentValue }
+                            .distinctUntilChanged()
+                            .collect { value ->
+                                if (value != RevealValue.Default) {
+                                    revealedListId = list.id
+                                } else if (revealedListId == list.id) {
+                                    revealedListId = null
+                                }
+                            }
+                    }
+                    LaunchedEffect(revealedListId) {
+                        if (revealedListId != list.id &&
+                            revealState.anchoredDraggableState.currentValue != RevealValue.Default
+                        ) {
+                            revealState.reset()
+                        }
+                    }
                     RevealSwipe(
                         modifier = Modifier.fillMaxWidth(),
                         state = revealState,

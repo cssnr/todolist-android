@@ -57,6 +57,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -72,8 +73,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import de.charlex.compose.RevealDirection
 import de.charlex.compose.RevealSwipe
+import de.charlex.compose.RevealValue
 import de.charlex.compose.rememberRevealState
 import de.charlex.compose.reset
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import org.cssnr.todolist.data.CatalogSuggestion
 import org.cssnr.todolist.data.TodoItemEntity
@@ -232,6 +235,7 @@ fun ListDetailScreen(
     var pendingDeleteItem by remember { mutableStateOf<TodoItemEntity?>(null) }
     var menuExpanded by rememberSaveable { mutableStateOf(false) }
     var pendingAction by rememberSaveable { mutableStateOf<BulkAction?>(null) }
+    var revealedItemId by remember { mutableStateOf<Long?>(null) }
     val hideCompleted = list?.hideCompleted ?: false
 
     editingItem?.let { item ->
@@ -454,6 +458,24 @@ fun ListDetailScreen(
                                             maxRevealDp = 160.dp,
                                             directions = setOf(RevealDirection.StartToEnd),
                                         )
+                                        LaunchedEffect(revealState) {
+                                            snapshotFlow { revealState.anchoredDraggableState.currentValue }
+                                                .distinctUntilChanged()
+                                                .collect { value ->
+                                                    if (value != RevealValue.Default) {
+                                                        revealedItemId = row.item.id
+                                                    } else if (revealedItemId == row.item.id) {
+                                                        revealedItemId = null
+                                                    }
+                                                }
+                                        }
+                                        LaunchedEffect(revealedItemId) {
+                                            if (revealedItemId != row.item.id &&
+                                                revealState.anchoredDraggableState.currentValue != RevealValue.Default
+                                            ) {
+                                                revealState.reset()
+                                            }
+                                        }
                                         val showDividerBelow = index + 1 < rows.size &&
                                             rows[index + 1] is ItemRow.Item
                                         Column {
