@@ -50,6 +50,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import de.charlex.compose.RevealDirection
 import de.charlex.compose.RevealSwipe
+import de.charlex.compose.RevealValue
 import de.charlex.compose.rememberRevealState
 import de.charlex.compose.reset
 import kotlinx.coroutines.launch
@@ -139,7 +140,7 @@ fun ListsScreen(
                         modifier = Modifier.fillMaxWidth(),
                         state = revealState,
                         coroutineScope = revealScope,
-                        onContentClick = { onOpenList(list.id) },
+                        onContentClick = null,
                         backgroundStartActionLabel = "List actions",
                         backgroundEndActionLabel = null,
                         backgroundCardStartColor = Color.Transparent,
@@ -189,6 +190,15 @@ fun ListsScreen(
                             colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                             ),
+                            onClick = {
+                                val isOpen =
+                                    revealState.anchoredDraggableState.targetValue != RevealValue.Default
+                                if (isOpen) {
+                                    revealScope.launch { revealState.reset() }
+                                } else {
+                                    onOpenList(list.id)
+                                }
+                            },
                         ) {
                             ListItem(
                                 modifier = Modifier.fillMaxWidth(),
