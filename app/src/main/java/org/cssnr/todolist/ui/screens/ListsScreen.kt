@@ -23,6 +23,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -149,7 +150,7 @@ fun ListsScreen(
                                 modifier = Modifier.matchParentSize(),
                                 colors = CardDefaults.cardColors(
                                     contentColor = MaterialTheme.colorScheme.onSurface,
-                                    containerColor = Color.Transparent,
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                                 ),
                                 shape = shape,
                                 content = content,
@@ -181,8 +182,22 @@ fun ListsScreen(
                                 )
                             }
                         },
-                    ) {
-                        ListItem(headlineContent = { Text(list.name) })
+                    ) { shape ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = shape,
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            ),
+                        ) {
+                            ListItem(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ListItemDefaults.colors(
+                                    containerColor = Color.Transparent,
+                                ),
+                                headlineContent = { Text(list.name) },
+                            )
+                        }
                     }
                 }
             }

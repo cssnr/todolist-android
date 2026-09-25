@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material.icons.Icons
@@ -435,15 +436,15 @@ fun ListDetailScreen(
                     else -> {
                         val rows = remember(visibleItems) { groupItems(visibleItems) }
                         LazyColumn(modifier = Modifier.fillMaxSize()) {
-                            items(
+                            itemsIndexed(
                                 rows,
-                                key = { row ->
+                                key = { _, row ->
                                     when (row) {
                                         is ItemRow.Header -> "header-${row.title}"
                                         is ItemRow.Item -> "item-${row.item.id}"
                                     }
                                 },
-                            ) { row ->
+                            ) { index, row ->
                                 when (row) {
                                     is ItemRow.Header -> CategoryHeader(row.title)
                                     is ItemRow.Item -> {
@@ -453,6 +454,9 @@ fun ListDetailScreen(
                                             maxRevealDp = 160.dp,
                                             directions = setOf(RevealDirection.StartToEnd),
                                         )
+                                        val showDividerBelow = index + 1 < rows.size &&
+                                            rows[index + 1] is ItemRow.Item
+                                        Column {
                                         RevealSwipe(
                                             modifier = Modifier.fillMaxWidth(),
                                             state = revealState,
@@ -543,6 +547,12 @@ fun ListDetailScreen(
                                                     )
                                                 },
                                             )
+                                        }
+                                        if (showDividerBelow) {
+                                            HorizontalDivider(
+                                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                            )
+                                        }
                                         }
                                     }
                                 }
