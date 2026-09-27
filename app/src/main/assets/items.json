@@ -91,6 +91,7 @@
         "Cranberry Juice",
         "Energy Drink",
         "Fruit Punch",
+        "Ginger Ale",
         "Grape Juice",
         "Hot Chocolate",
         "Iced Coffee",
@@ -99,6 +100,7 @@
         "Lemonade",
         "Orange Juice",
         "Pineapple Juice",
+        "Root Beer",
         "Soda",
         "Sparkling Water",
         "Sports Drink",
@@ -176,6 +178,7 @@
         "Mustard",
         "Olive Oil",
         "Oyster Sauce",
+        "Pesto",
         "Pickles",
         "Ranch Dressing",
         "Red Wine Vinegar",
@@ -207,10 +210,12 @@
         "Breadcrumbs",
         "Brown Sugar",
         "Cake Flour",
+        "Cardamom",
         "Cayenne Pepper",
         "Chili Powder",
         "Chocolate Chips",
         "Cinnamon",
+        "Cloves",
         "Cocoa Powder",
         "Coconut Oil",
         "Cooking Spray",
@@ -273,6 +278,7 @@
         "Cream Cheese",
         "Eggs",
         "Feta Cheese",
+        "Goat Cheese",
         "Gouda",
         "Greek Yogurt",
         "Half & Half",
@@ -306,6 +312,7 @@
         "Deli Chicken",
         "Deli Ham",
         "Deli Meat",
+        "Egg Salad",
         "Honey Ham",
         "Hummus",
         "Macaroni Salad",
@@ -317,7 +324,8 @@
         "Prosciutto",
         "Roast Beef",
         "Salami",
-        "Sliced Turkey"
+        "Sliced Turkey",
+        "Tuna Salad"
       ]
     },
     {
@@ -366,6 +374,7 @@
         "Aluminum Foil",
         "Batteries",
         "Bleach",
+        "Candles",
         "Coffee Filters",
         "Dish Soap",
         "Dishwasher Detergent",
@@ -390,7 +399,8 @@
         "Sponges",
         "Toilet Bowl Cleaner",
         "Toilet Paper",
-        "Trash Bags"
+        "Trash Bags",
+        "Wax Paper"
       ]
     },
     {
@@ -400,7 +410,9 @@
         "Beef Roast",
         "Bratwurst",
         "Breakfast Sausage",
+        "Brisket",
         "Chicken Breast",
+        "Chicken Legs",
         "Chicken Sausage",
         "Chicken Tenders",
         "Chicken Thighs",
@@ -450,6 +462,7 @@
         "Jam",
         "Lentils",
         "Mac & Cheese",
+        "Macaroni",
         "Marshmallows",
         "Nuts",
         "Oatmeal",
@@ -461,6 +474,7 @@
         "Raisins",
         "Ramen Noodles",
         "Rice",
+        "Spaghetti",
         "Tahini",
         "White Rice"
       ]
@@ -496,6 +510,7 @@
         "Shaving Cream",
         "Sunscreen",
         "Tampons",
+        "Thermometer",
         "Toothbrush",
         "Toothpaste",
         "Vitamins"
@@ -585,6 +600,7 @@
         "Plantains",
         "Plums",
         "Pomegranates",
+        "Potatoes",
         "Radishes",
         "Raspberries",
         "Red Bell Peppers",
@@ -637,6 +653,7 @@
     {
       "name": "Snacks",
       "items": [
+        "Animal Crackers",
         "Beef Jerky",
         "Candy",
         "Cashews",
@@ -658,7 +675,8 @@
         "Sunflower Seeds",
         "Tortilla Chips",
         "Trail Mix",
-        "Veggie Straws"
+        "Veggie Straws",
+        "Wafers"
       ]
     },
     {
