@@ -56,11 +56,34 @@
       ]
     },
     {
+      "name": "Beer",
+      "items": [
+        "Amber Ale",
+        "Beer",
+        "Belgian Ale",
+        "Blonde Ale",
+        "Brown Ale",
+        "Cream Ale",
+        "IPA",
+        "Kolsch",
+        "Lager",
+        "Light Beer",
+        "Non-Alcoholic Beer",
+        "Oktoberfest",
+        "Pale Ale",
+        "Pilsner",
+        "Porter",
+        "Scotch Ale",
+        "Sour",
+        "Stout",
+        "Wheat Beer"
+      ]
+    },
+    {
       "name": "Beverages",
       "items": [
         "Apple Cider",
         "Apple Juice",
-        "Beer",
         "Bottled Water",
         "Chocolate Milk",
         "Coconut Water",
@@ -76,15 +99,13 @@
         "Lemonade",
         "Orange Juice",
         "Pineapple Juice",
-        "Pinot Grigio",
         "Soda",
         "Sparkling Water",
         "Sports Drink",
         "Tea",
         "Tea Bags",
         "Tomato Juice",
-        "Vegetable Juice",
-        "Wine"
+        "Vegetable Juice"
       ]
     },
     {
@@ -638,6 +659,50 @@
         "Tortilla Chips",
         "Trail Mix",
         "Veggie Straws"
+      ]
+    },
+    {
+      "name": "Spirits",
+      "items": [
+        "Amaretto",
+        "Bourbon",
+        "Brandy",
+        "Cognac",
+        "Gin",
+        "Rum",
+        "Schnapps",
+        "Scotch",
+        "Tequila",
+        "Triple Sec",
+        "Vodka",
+        "Whiskey"
+      ]
+    },
+    {
+      "name": "Wine",
+      "items": [
+        "Cabernet Sauvignon",
+        "Cava",
+        "Champagne",
+        "Chardonnay",
+        "Madeira",
+        "Malbec",
+        "Merlot",
+        "Moscato",
+        "Pinot Grigio",
+        "Pinot Gris",
+        "Pinot Noir",
+        "Port",
+        "Prosecco",
+        "Riesling",
+        "Rose",
+        "Sauvignon Blanc",
+        "Sherry",
+        "Syrah",
+        "Tempranillo",
+        "White Zinfandel",
+        "Wine",
+        "Zinfandel"
       ]
     }
   ]
