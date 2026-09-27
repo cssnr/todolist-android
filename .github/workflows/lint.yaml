@@ -71,22 +71,6 @@ jobs:
         with:
           shellcheck_opts: -e SC2129
 
-      - name: "Check Items JSON"
-        if: ${{ !cancelled() }}
-        env:
-          file: app/src/main/assets/items.json
-        run: |
-          echo "Check no duplicate items"
-          if ! jq -e '[.categories[].items[]] | group_by(.) | map(select(length > 1)) | length == 0' "${file}"; then
-            echo "::error file=${file}::Duplicate items found"
-            exit 1
-          fi
-          echo "Check items are alphabetical"
-          if ! jq -e 'all(.categories[]; .items == (.items | sort_by(gsub(" "; "") | ascii_downcase)))' "${file}"; then
-            echo "::error file=${file}::Items are not alphabetical"
-            exit 1
-          fi
-
       #- name: "shellcheck"
       #  if: ${{ !cancelled() }}
       #  uses: ludeeus/action-shellcheck@master
@@ -94,3 +78,23 @@ jobs:
       #    SHELLCHECK_OPTS: -x
       #  with:
       #    scandir: .github/scripts
+
+      #- name: "Check Items JSON"
+      #  if: ${{ !cancelled() }}
+      #  env:
+      #    file: app/src/main/assets/items.json
+      #  run: |
+      #    echo "Check no duplicate items"
+      #    if ! jq -e '[.categories[].items[]] | group_by(.) | map(select(length > 1)) | length == 0' "${file}"; then
+      #      echo "::error file=${file}::Duplicate items found"
+      #      exit 1
+      #    fi
+      #    echo "Check items are alphabetical"
+      #    if ! jq -e 'all(.categories[]; .items == (.items | sort_by(gsub(" "; "") | ascii_downcase)))' "${file}"; then
+      #      echo "::error file=${file}::Items are not alphabetical"
+      #      exit 1
+      #    fi
+
+      - name: "Validate Items JSON"
+        if: ${{ !cancelled() }}
+        run: python3 ".github/test/check_items.py"
