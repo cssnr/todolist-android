@@ -9,21 +9,28 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -41,6 +48,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
@@ -49,6 +57,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -61,13 +70,14 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -85,6 +95,10 @@ import org.cssnr.todolist.ui.theme.TodoListTheme
 import org.cssnr.todolist.ui.viewmodel.ListDetailViewModel
 
 private const val UNCATEGORIZED = "Uncategorized"
+
+private const val NO_CATEGORY_KEY = "no-category"
+
+private val MIN_SHEET_CONTENT_HEIGHT = 200.dp
 
 private sealed interface SuggestionRow {
     data class Exact(val text: String) : SuggestionRow
@@ -173,6 +187,7 @@ fun ListDetailRoute(
 ) {
     val list by viewModel.list.collectAsStateWithLifecycle()
     val items by viewModel.items.collectAsStateWithLifecycle()
+    val categories by viewModel.categories.collectAsStateWithLifecycle()
     val query by viewModel.query.collectAsStateWithLifecycle()
     val suggestions by viewModel.suggestions.collectAsStateWithLifecycle()
     val showSearchCategories by viewModel.showSearchCategories.collectAsStateWithLifecycle()
@@ -185,6 +200,7 @@ fun ListDetailRoute(
     ListDetailScreen(
         list = list,
         items = items,
+        categories = categories,
         query = query,
         suggestions = suggestions,
         showSearchCategories = showSearchCategories,
@@ -208,6 +224,7 @@ fun ListDetailRoute(
 fun ListDetailScreen(
     list: TodoListEntity?,
     items: List<TodoItemEntity>,
+    categories: List<String>,
     query: String,
     suggestions: List<CatalogSuggestion>,
     showSearchCategories: Boolean,
@@ -218,7 +235,7 @@ fun ListDetailScreen(
     onOpenImport: () -> Unit,
     onOpenExport: () -> Unit,
     onToggleItem: (TodoItemEntity) -> Unit,
-    onUpdateItem: (TodoItemEntity, String) -> Unit,
+    onUpdateItem: (TodoItemEntity, String, String?) -> Unit,
     onDeleteItem: (TodoItemEntity) -> Unit,
     onToggleHideCompleted: (Boolean) -> Unit,
     onCrossAllItems: () -> Unit,
@@ -237,13 +254,17 @@ fun ListDetailScreen(
     var pendingAction by rememberSaveable { mutableStateOf<BulkAction?>(null) }
     var revealedItemId by remember { mutableStateOf<Long?>(null) }
     val hideCompleted = list?.hideCompleted ?: false
+    val density = LocalDensity.current
+    val statusBarHeight = with(density) { WindowInsets.statusBars.getTop(density).toDp() }
 
     editingItem?.let { item ->
-        EditItemDialog(
+        EditItemSheet(
             item = item,
+            categories = categories,
+            statusBarHeight = statusBarHeight,
             onDismiss = { editingItem = null },
-            onConfirm = { newText ->
-                onUpdateItem(item, newText)
+            onConfirm = { newText, newCategory ->
+                onUpdateItem(item, newText, newCategory)
                 editingItem = null
             },
         )
@@ -726,47 +747,140 @@ internal fun ConfirmActionDialog(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun EditItemDialog(
+private fun EditItemSheet(
     item: TodoItemEntity,
+    categories: List<String>,
+    statusBarHeight: Dp,
     onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit,
+    onConfirm: (String, String?) -> Unit,
 ) {
     val textState = rememberTextFieldState(initialText = item.text)
+    val categoryState = rememberTextFieldState(initialText = item.category.orEmpty())
     val trimmedText = textState.text.toString().trim()
-    val focusRequester = remember { FocusRequester() }
-    val keyboardController = LocalSoftwareKeyboardController.current
+    val trimmedCategory = categoryState.text.toString().trim()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val density = LocalDensity.current
 
-    LaunchedEffect(Unit) {
-        focusRequester.requestFocus()
-        keyboardController?.show()
+    // ModalBottomSheet shrinks its container by the IME, but only pads the top for the status bar
+    // and leaves the bottom to us, so cap the content to the space actually left on screen.
+    val screenHeight = with(density) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
+    val bottomInset = maxOf(
+        WindowInsets.ime.getBottom(density),
+        WindowInsets.navigationBars.getBottom(density),
+    )
+    val maxContentHeight = with(density) {
+        (screenHeight - statusBarHeight.toPx() - bottomInset)
+            .coerceAtLeast(MIN_SHEET_CONTENT_HEIGHT.toPx())
+            .toDp()
     }
 
-    AlertDialog(
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
-        title = { Text("Edit item") },
-        text = {
+        sheetState = sheetState,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = maxContentHeight),
+        ) {
+            Text(
+                text = "Edit item",
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 8.dp),
+            )
             OutlinedTextField(
                 state = textState,
-                modifier = Modifier.focusRequester(focusRequester),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
                 label = { Text("Item") },
                 lineLimits = TextFieldLineLimits.SingleLine,
             )
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onConfirm(trimmedText) },
-                enabled = trimmedText.isNotBlank(),
+            OutlinedTextField(
+                state = categoryState,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 24.dp, end = 24.dp, top = 12.dp),
+                label = { Text("Category") },
+                placeholder = { Text("None") },
+                lineLimits = TextFieldLineLimits.SingleLine,
+            )
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f, fill = false)
+                    .padding(top = 8.dp),
             ) {
-                Text("Save")
+                item(key = NO_CATEGORY_KEY) {
+                    CategoryOption(
+                        label = "No category",
+                        selected = trimmedCategory.isEmpty(),
+                        onClick = { categoryState.setTextAndPlaceCursorAtEnd("") },
+                    )
+                }
+                items(categories, key = { it.lowercase() }) { category ->
+                    CategoryOption(
+                        label = category,
+                        selected = category.equals(trimmedCategory, ignoreCase = true),
+                        onClick = { categoryState.setTextAndPlaceCursorAtEnd(category) },
+                    )
+                }
             }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel")
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                TextButton(
+                    onClick = { onConfirm(trimmedText, trimmedCategory.ifEmpty { null }) },
+                    enabled = trimmedText.isNotBlank(),
+                ) {
+                    Text("Save")
+                }
             }
-        },
-    )
+        }
+    }
+}
+
+@Composable
+private fun CategoryOption(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val contentColor = if (selected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.onSurface
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 24.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            color = contentColor,
+            modifier = Modifier.weight(1f),
+        )
+        if (selected) {
+            Icon(
+                imageVector = Icons.Filled.Check,
+                contentDescription = null,
+                tint = contentColor,
+            )
+        }
+    }
 }
 
 @Preview(showBackground = true)
@@ -776,6 +890,7 @@ fun ListDetailScreenPreview() {
         ListDetailScreen(
             list = TodoListEntity(id = 1, name = "Groceries"),
             items = emptyList(),
+            categories = emptyList(),
             query = "",
             suggestions = emptyList(),
             showSearchCategories = true,
@@ -786,7 +901,7 @@ fun ListDetailScreenPreview() {
             onOpenImport = {},
             onOpenExport = {},
             onToggleItem = {},
-            onUpdateItem = { _, _ -> },
+            onUpdateItem = { _, _, _ -> },
             onDeleteItem = {},
             onToggleHideCompleted = {},
             onCrossAllItems = {},
@@ -825,6 +940,7 @@ fun ListDetailScreenItemsPreview() {
                 ),
                 TodoItemEntity(id = 4, listId = 1, text = "Random", done = false, category = null),
             ),
+            categories = listOf("Bakery", "Dairy"),
             query = "",
             suggestions = emptyList(),
             showSearchCategories = true,
@@ -835,7 +951,7 @@ fun ListDetailScreenItemsPreview() {
             onOpenImport = {},
             onOpenExport = {},
             onToggleItem = {},
-            onUpdateItem = { _, _ -> },
+            onUpdateItem = { _, _, _ -> },
             onDeleteItem = {},
             onToggleHideCompleted = {},
             onCrossAllItems = {},

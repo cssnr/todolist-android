@@ -11,6 +11,7 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
@@ -73,6 +74,20 @@ class ListDetailViewModel(
             initialValue = emptyList(),
         )
 
+    val categories: StateFlow<List<String>> = combine(
+        catalogRepository.observeCategories(),
+        items,
+    ) { catalog, items ->
+        (catalog.map { it.name } + items.mapNotNull { it.category })
+            .distinctBy { it.lowercase() }
+            .sortedWith(Comparator { a, b -> a.compareTo(b, ignoreCase = true) })
+    }.distinctUntilChanged()
+        .stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = emptyList(),
+    )
+
     val showSearchCategories: StateFlow<Boolean> = settingsRepository.showSearchCategories
         .stateIn(
             scope = viewModelScope,
@@ -109,9 +124,9 @@ class ListDetailViewModel(
         }
     }
 
-    fun updateItem(item: TodoItemEntity, newText: String) {
+    fun updateItem(item: TodoItemEntity, newText: String, newCategory: String?) {
         viewModelScope.launch {
-            repository.updateItem(item, newText)
+            repository.updateItem(item, newText, newCategory)
         }
     }
 

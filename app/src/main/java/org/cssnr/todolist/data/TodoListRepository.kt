@@ -64,10 +64,12 @@ class TodoListRepository(private val dao: TodoListDao) {
         dao.setItemDone(item.id, !item.done)
     }
 
-    suspend fun updateItem(item: TodoItemEntity, newText: String) {
+    suspend fun updateItem(item: TodoItemEntity, newText: String, newCategory: String?) {
         val text = newText.trim()
-        if (text.isNotEmpty() && text != item.text) {
-            dao.updateItemText(item.id, text)
+        if (text.isEmpty()) return
+        val category = newCategory?.trim()?.takeIf { it.isNotEmpty() }
+        if (text != item.text || category != item.category) {
+            dao.updateItem(item.id, text, category)
         }
     }
 
