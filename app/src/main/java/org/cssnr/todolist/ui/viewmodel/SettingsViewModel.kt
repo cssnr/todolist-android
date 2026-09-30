@@ -14,6 +14,7 @@ data class SettingsState(
     val autoOpenLastList: Boolean = true,
     val showSearchCategories: Boolean = true,
     val fullWidthStrikethrough: Boolean = false,
+    val useDynamicColor: Boolean = true,
     val crashReporting: Boolean = true,
 )
 
@@ -25,12 +26,14 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         settingsRepository.autoOpenLastList,
         settingsRepository.showSearchCategories,
         settingsRepository.fullWidthStrikethrough,
+        settingsRepository.useDynamicColor,
         settingsRepository.crashReporting,
-    ) { autoOpenLastList, showSearchCategories, fullWidthStrikethrough, crashReporting ->
+    ) { autoOpenLastList, showSearchCategories, fullWidthStrikethrough, useDynamicColor, crashReporting ->
         SettingsState(
             autoOpenLastList = autoOpenLastList,
             showSearchCategories = showSearchCategories,
             fullWidthStrikethrough = fullWidthStrikethrough,
+            useDynamicColor = useDynamicColor,
             crashReporting = crashReporting,
         )
     }.stateIn(
@@ -54,6 +57,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setFullWidthStrikethrough(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setFullWidthStrikethrough(enabled)
+        }
+    }
+
+    fun setUseDynamicColor(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setUseDynamicColor(enabled)
         }
     }
 
