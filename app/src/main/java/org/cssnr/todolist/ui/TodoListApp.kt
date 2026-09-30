@@ -127,9 +127,7 @@ fun TodoListApp() {
                                     }
 
                                     Destination.SETTINGS -> {
-                                        val popped = navController
-                                            .popBackStack<Settings>(inclusive = false)
-                                        if (!popped) {
+                                        if (currentDestination?.hasRoute<Settings>() != true) {
                                             navController.navigate(destination.route) {
                                                 launchSingleTop = true
                                             }
