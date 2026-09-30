@@ -11,6 +11,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import com.materialkolor.rememberDynamicColorScheme
+import org.cssnr.todolist.data.ColorSeed
 
 /**
  * The color scheme a [ColorSeed] resolves to in the current light/dark mode.

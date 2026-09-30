@@ -13,8 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.cssnr.todolist.data.ColorSeed
 import org.cssnr.todolist.ui.TodoListApp
-import org.cssnr.todolist.ui.theme.ColorSeed
 import org.cssnr.todolist.ui.theme.TodoListTheme
 import org.cssnr.todolist.ui.viewmodel.SettingsViewModel
 import org.cssnr.todolist.ui.viewmodel.StartupViewModel

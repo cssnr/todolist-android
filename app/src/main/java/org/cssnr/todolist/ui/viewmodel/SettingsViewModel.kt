@@ -8,8 +8,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import org.cssnr.todolist.data.ColorSeed
 import org.cssnr.todolist.data.SettingsRepository
-import org.cssnr.todolist.ui.theme.ColorSeed
 
 data class SettingsState(
     val autoOpenLastList: Boolean = true,

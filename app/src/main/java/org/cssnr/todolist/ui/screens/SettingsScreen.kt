@@ -56,9 +56,9 @@ import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import org.cssnr.todolist.R
+import org.cssnr.todolist.data.ColorSeed
 import org.cssnr.todolist.ui.components.SettingsGroup
 import org.cssnr.todolist.ui.components.SettingsTile
-import org.cssnr.todolist.ui.theme.ColorSeed
 import org.cssnr.todolist.ui.theme.TodoListTheme
 import org.cssnr.todolist.ui.theme.colorSchemeFor
 import org.cssnr.todolist.ui.viewmodel.SettingsState
@@ -215,9 +215,11 @@ private val PICKER_CHECK_SIZE = 18.dp
  *
  * A seeded entry is drawn as its own seed color, which is the one thing the user is actually
  * picking between. [ColorSeed.DYNAMIC] has no seed of its own, so it previews the primary the
- * platform currently produces; below Android 12 there is nothing to preview, so it is drawn
- * disabled with an explanatory label instead of a color that would not match anything.
- * [ColorSeed.DEFAULT] has no seed either, so it shows the primary of the baseline palette.
+ * platform currently produces; below Android 12 there are no wallpaper colors to read and
+ * [ColorSeed.DYNAMIC] resolves to the Material 3 baseline, so its swatch previews that baseline
+ * instead. [ColorSeed.DEFAULT] is the baseline too, which makes the two identical there, so
+ * [ColorSeed.DEFAULT] is left out of the picker entirely below Android 12 rather than being
+ * offered as a second swatch that changes nothing.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -227,12 +229,12 @@ private fun ColorSeedPicker(
 ) {
     val darkTheme = isSystemInDarkTheme()
     val dynamicSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val baselineSwatch = colorSchemeFor(ColorSeed.DEFAULT, darkTheme).primary
     val dynamicSwatch = if (dynamicSupported) {
         colorSchemeFor(ColorSeed.DYNAMIC, darkTheme).primary
     } else {
-        null
+        baselineSwatch
     }
-    val baselineSwatch = colorSchemeFor(ColorSeed.DEFAULT, darkTheme).primary
 
     Column(
         horizontalAlignment = Alignment.Start,
@@ -247,28 +249,21 @@ private fun ColorSeedPicker(
             horizontalArrangement = Arrangement.spacedBy(PICKER_SWATCH_GAP),
             verticalArrangement = Arrangement.spacedBy(PICKER_SWATCH_GAP),
         ) {
-            ColorSeed.entries.forEach { seed ->
-                val swatch = seed.seed
-                    ?: if (seed == ColorSeed.DYNAMIC) dynamicSwatch else baselineSwatch
-                if (swatch != null) {
+            ColorSeed.entries
+                .filter { dynamicSupported || it != ColorSeed.DEFAULT }
+                .forEach { seed ->
+                    val swatch = when (seed) {
+                        ColorSeed.DYNAMIC -> dynamicSwatch
+                        ColorSeed.DEFAULT -> baselineSwatch
+                        else -> checkNotNull(seed.seed)
+                    }
                     Swatch(
                         color = swatch,
                         selected = seed == selected,
                         contentDescription = colorSeedLabel(seed),
                         onClick = { onSelected(seed) },
                     )
-                } else {
-                    Swatch(
-                        color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        selected = seed == selected,
-                        contentDescription = stringResource(
-                            R.string.settings_color_dynamic_unsupported,
-                        ),
-                        enabled = false,
-                        onClick = {},
-                    )
                 }
-            }
         }
     }
 }
@@ -291,30 +286,31 @@ private fun Swatch(
     color: Color,
     selected: Boolean,
     contentDescription: String,
-    enabled: Boolean = true,
     onClick: () -> Unit,
 ) {
     Box(
+        // clickable sits between background and border so the tap indication is drawn over the
+        // swatch fill and the selection ring is drawn over the tap indication. Modifiers later in
+        // the chain draw on top of the ones before them, so swapping border and clickable would
+        // let the ripple wash out the ring.
         modifier = Modifier
             .size(PICKER_SWATCH_SIZE)
             .clip(CircleShape)
             .background(color)
-            .then(
-                if (selected) {
-                    Modifier.border(
-                        width = PICKER_SELECTED_STROKE,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        shape = CircleShape,
-                    )
+            .clickable(onClick = onClick)
+            .border(
+                width = if (selected) {
+                    PICKER_SELECTED_STROKE
                 } else {
-                    Modifier.border(
-                        width = PICKER_UNSELECTED_STROKE,
-                        color = MaterialTheme.colorScheme.outlineVariant,
-                        shape = CircleShape,
-                    )
+                    PICKER_UNSELECTED_STROKE
                 },
-            )
-            .clickable(enabled = enabled, onClick = onClick),
+                color = if (selected) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.outlineVariant
+                },
+                shape = CircleShape,
+            ),
         contentAlignment = Alignment.Center,
     ) {
         if (selected) {

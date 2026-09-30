@@ -14,7 +14,6 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.map
-import org.cssnr.todolist.ui.theme.ColorSeed
 
 private val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
@@ -47,6 +46,9 @@ class SettingsRepository(private val context: Context) {
 
     // The seed is stored by name rather than index so reordering or inserting an entry in
     // ColorSeed can never silently repoint an existing user's choice at a different color.
+    // Renaming an entry is the one case this does not cover: fromName falls back to DYNAMIC, so
+    // a rename quietly resets anyone who had picked that entry. Keep the old names alive as
+    // deprecated constants if an entry ever has to be renamed.
     val colorSeed: Flow<ColorSeed> = context.settingsDataStore.data
         .map { preferences -> ColorSeed.fromName(preferences[Keys.COLOR_SEED]) }
 
