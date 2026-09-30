@@ -66,6 +66,23 @@ sealed interface SettingsTile {
         override val enabled: Boolean = true,
         val onClick: () -> Unit,
     ) : SettingsTile
+
+    /**
+     * A row whose body is arbitrary composable content laid out under the title instead of a
+     * trailing switch, for options that need more room than a switch allows (a row of color
+     * swatches, for instance).
+     *
+     * The title row is not clickable here: [content] owns its own hit targets, so a single
+     * row-wide click handler would swallow them and fire for taps between the swatches.
+     */
+    data class Custom(
+        override val icon: Painter,
+        @get:StringRes override val titleRes: Int,
+        @get:StringRes override val summaryRes: Int? = null,
+        val content: @Composable () -> Unit,
+    ) : SettingsTile {
+        override val enabled: Boolean = true
+    }
 }
 
 /**
@@ -114,12 +131,20 @@ private fun SettingsTileRow(
     shape: Shape,
     modifier: Modifier = Modifier,
 ) {
-    Row(
+    Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(shape)
             .background(MaterialTheme.colorScheme.surfaceContainer)
-            .clickable(enabled = tile.enabled, onClick = tile.onClick),
+            .then(
+                // Custom owns its own hit targets, so it must not sit inside a row-wide
+                // clickable or taps between its children would fire a handler of its own.
+                if (tile is SettingsTile.Custom) {
+                    Modifier
+                } else {
+                    Modifier.clickable(enabled = tile.enabled, onClick = tile.onClick)
+                },
+            ),
     ) {
         Row(
             modifier = Modifier
@@ -155,23 +180,44 @@ private fun SettingsTileRow(
                     )
                 }
             }
-            if (tile is SettingsTile.Toggle) {
-                Spacer(modifier = Modifier.width(TILE_TRAILING_GAP))
-                Switch(
-                    checked = tile.checked,
-                    onCheckedChange = null,
-                    thumbContent = {
-                        Icon(
-                            imageVector = if (tile.checked) {
-                                Icons.Filled.Check
-                            } else {
-                                Icons.Filled.Close
-                            },
-                            contentDescription = null,
-                            modifier = Modifier.size(SwitchDefaults.IconSize),
-                        )
-                    },
-                )
+            when (tile) {
+                is SettingsTile.Toggle -> {
+                    Spacer(modifier = Modifier.width(TILE_TRAILING_GAP))
+                    Switch(
+                        checked = tile.checked,
+                        onCheckedChange = null,
+                        thumbContent = {
+                            Icon(
+                                imageVector = if (tile.checked) {
+                                    Icons.Filled.Check
+                                } else {
+                                    Icons.Filled.Close
+                                },
+                                contentDescription = null,
+                                modifier = Modifier.size(SwitchDefaults.IconSize),
+                            )
+                        },
+                    )
+                }
+
+                is SettingsTile.Link,
+                is SettingsTile.Custom,
+                -> Unit
+            }
+        }
+        // Custom content sits below the title row and spans the full tile width, which is the
+        // only way a set of swatches gets enough room without crowding the title.
+        if (tile is SettingsTile.Custom) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        start = TILE_CUSTOM_CONTENT_START_PADDING,
+                        end = TILE_PADDING,
+                        bottom = TILE_PADDING,
+                    ),
+            ) {
+                tile.content()
             }
         }
     }
@@ -181,6 +227,8 @@ private val SettingsTile.onClick: () -> Unit
     get() = when (this) {
         is SettingsTile.Toggle -> { { onCheckedChange(!checked) } }
         is SettingsTile.Link -> onClick
+        // Never reached: Custom is excluded from the row-wide clickable in SettingsTileRow.
+        is SettingsTile.Custom -> { {} }
     }
 
 private fun tileShape(index: Int, count: Int): Shape {
@@ -199,6 +247,12 @@ private val TILE_ICON_SLOT = 40.dp
 private val TILE_ICON_SIZE = 24.dp
 private val TILE_ICON_GAP = 12.dp
 private val TILE_TRAILING_GAP = 16.dp
+
+/**
+ * Custom content starts under the title text rather than under the icon, so it lines up with
+ * the title's left edge: TILE_ICON_SLOT + TILE_ICON_GAP.
+ */
+private val TILE_CUSTOM_CONTENT_START_PADDING = TILE_ICON_SLOT + TILE_ICON_GAP
 private val GROUP_MARGIN = 16.dp
 private val GROUP_TITLE_START_PADDING = 8.dp
 private val GROUP_TITLE_TOP_PADDING = 26.dp

@@ -22,9 +22,14 @@
     <string name="settings_show_search_categories_summary">Show categories in suggestions</string>
     <string name="settings_full_width_strikethrough">Full Width Strikethrough</string>
     <string name="settings_full_width_strikethrough_summary">Strike line across the whole row</string>
-    <string name="settings_dynamic_color">Use Dynamic Color</string>
-    <string name="settings_dynamic_color_summary">Take colors from your wallpaper</string>
-    <string name="settings_dynamic_color_unsupported">Requires Android 12 or newer</string>
+    <string name="settings_color_scheme">Color Scheme</string>
+    <string name="settings_color_default">Default</string>
+    <string name="settings_color_dynamic">Dynamic</string>
+    <string name="settings_color_todolist">TodoList</string>
+    <string name="settings_color_red">Red</string>
+    <string name="settings_color_orange">Orange</string>
+    <string name="settings_color_lime">Lime</string>
+    <string name="settings_color_emerald">Emerald</string>
     <string name="settings_crash_reporting">Enable Crash Reporting</string>
     <string name="settings_crash_reporting_summary">Send Crash Reports</string>
 </resources>

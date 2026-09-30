@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -23,7 +24,7 @@ class SettingsRepository(private val context: Context) {
         val LAST_OPENED_LIST_ID = longPreferencesKey("last_opened_list_id")
         val SHOW_SEARCH_CATEGORIES = booleanPreferencesKey("show_search_categories")
         val FULL_WIDTH_STRIKETHROUGH = booleanPreferencesKey("full_width_strikethrough")
-        val USE_DYNAMIC_COLOR = booleanPreferencesKey("use_dynamic_color")
+        val COLOR_SEED = stringPreferencesKey("color_seed")
         const val CRASH_REPORTING = "acra.enable"
     }
 
@@ -43,8 +44,13 @@ class SettingsRepository(private val context: Context) {
     val fullWidthStrikethrough: Flow<Boolean> = context.settingsDataStore.data
         .map { preferences -> preferences[Keys.FULL_WIDTH_STRIKETHROUGH] ?: false }
 
-    val useDynamicColor: Flow<Boolean> = context.settingsDataStore.data
-        .map { preferences -> preferences[Keys.USE_DYNAMIC_COLOR] ?: true }
+    // The seed is stored by name rather than index so reordering or inserting an entry in
+    // ColorSeed can never silently repoint an existing user's choice at a different color.
+    // Renaming an entry is the one case this does not cover: fromName falls back to DYNAMIC, so
+    // a rename quietly resets anyone who had picked that entry. Keep the old names alive as
+    // deprecated constants if an entry ever has to be renamed.
+    val colorSeed: Flow<ColorSeed> = context.settingsDataStore.data
+        .map { preferences -> ColorSeed.fromName(preferences[Keys.COLOR_SEED]) }
 
     val crashReporting: Flow<Boolean> = callbackFlow {
         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
@@ -75,9 +81,9 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
-    suspend fun setUseDynamicColor(enabled: Boolean) {
+    suspend fun setColorSeed(seed: ColorSeed) {
         context.settingsDataStore.edit { preferences ->
-            preferences[Keys.USE_DYNAMIC_COLOR] = enabled
+            preferences[Keys.COLOR_SEED] = seed.name
         }
     }
 
