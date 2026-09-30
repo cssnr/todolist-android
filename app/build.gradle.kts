@@ -68,6 +68,7 @@ dependencies {
     implementation(libs.androidx.room3.runtime)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.core.splashscreen)
+    implementation(libs.material.kolor)
     implementation(libs.kotlinx.serialization.core)
     implementation(libs.kotlinx.serialization.json)
     ksp(libs.androidx.room3.compiler)

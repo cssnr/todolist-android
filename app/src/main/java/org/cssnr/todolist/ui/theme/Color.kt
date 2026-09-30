@@ -1,11 +1,12 @@
 package org.cssnr.todolist.ui.theme
 
-import androidx.compose.ui.graphics.Color
-
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
-
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+/*
+ * There are deliberately no single color constants in this package. The old Android Studio
+ * template purples that lived here set only three roles on top of the baseline, so the non-dynamic
+ * theme was mostly baseline with a purple tint.
+ *
+ * Every color now comes from either the platform wallpaper ([ColorSeed.DYNAMIC]), the Material 3
+ * baseline ([ColorSeed.DEFAULT]), or a seed expanded at runtime by [colorSchemeFor]. The seeds
+ * themselves are the only color literals in the app, and they live in [ColorSeed]; the picker
+ * draws its swatches straight from those seeds.
+ */

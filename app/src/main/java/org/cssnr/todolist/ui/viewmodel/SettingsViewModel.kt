@@ -9,12 +9,13 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import org.cssnr.todolist.data.SettingsRepository
+import org.cssnr.todolist.ui.theme.ColorSeed
 
 data class SettingsState(
     val autoOpenLastList: Boolean = true,
     val showSearchCategories: Boolean = true,
     val fullWidthStrikethrough: Boolean = false,
-    val useDynamicColor: Boolean = true,
+    val colorSeed: ColorSeed = ColorSeed.DYNAMIC,
     val crashReporting: Boolean = true,
 )
 
@@ -26,14 +27,14 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         settingsRepository.autoOpenLastList,
         settingsRepository.showSearchCategories,
         settingsRepository.fullWidthStrikethrough,
-        settingsRepository.useDynamicColor,
+        settingsRepository.colorSeed,
         settingsRepository.crashReporting,
-    ) { autoOpenLastList, showSearchCategories, fullWidthStrikethrough, useDynamicColor, crashReporting ->
+    ) { autoOpenLastList, showSearchCategories, fullWidthStrikethrough, colorSeed, crashReporting ->
         SettingsState(
             autoOpenLastList = autoOpenLastList,
             showSearchCategories = showSearchCategories,
             fullWidthStrikethrough = fullWidthStrikethrough,
-            useDynamicColor = useDynamicColor,
+            colorSeed = colorSeed,
             crashReporting = crashReporting,
         )
     }.stateIn(
@@ -60,9 +61,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun setUseDynamicColor(enabled: Boolean) {
+    fun setColorSeed(seed: ColorSeed) {
         viewModelScope.launch {
-            settingsRepository.setUseDynamicColor(enabled)
+            settingsRepository.setColorSeed(seed)
         }
     }
 
