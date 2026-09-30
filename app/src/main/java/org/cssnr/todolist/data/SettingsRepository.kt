@@ -23,6 +23,7 @@ class SettingsRepository(private val context: Context) {
         val LAST_OPENED_LIST_ID = longPreferencesKey("last_opened_list_id")
         val SHOW_SEARCH_CATEGORIES = booleanPreferencesKey("show_search_categories")
         val FULL_WIDTH_STRIKETHROUGH = booleanPreferencesKey("full_width_strikethrough")
+        val USE_DYNAMIC_COLOR = booleanPreferencesKey("use_dynamic_color")
         const val CRASH_REPORTING = "acra.enable"
     }
 
@@ -41,6 +42,9 @@ class SettingsRepository(private val context: Context) {
 
     val fullWidthStrikethrough: Flow<Boolean> = context.settingsDataStore.data
         .map { preferences -> preferences[Keys.FULL_WIDTH_STRIKETHROUGH] ?: false }
+
+    val useDynamicColor: Flow<Boolean> = context.settingsDataStore.data
+        .map { preferences -> preferences[Keys.USE_DYNAMIC_COLOR] ?: true }
 
     val crashReporting: Flow<Boolean> = callbackFlow {
         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
@@ -68,6 +72,12 @@ class SettingsRepository(private val context: Context) {
     suspend fun setFullWidthStrikethrough(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
             preferences[Keys.FULL_WIDTH_STRIKETHROUGH] = enabled
+        }
+    }
+
+    suspend fun setUseDynamicColor(enabled: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[Keys.USE_DYNAMIC_COLOR] = enabled
         }
     }
 

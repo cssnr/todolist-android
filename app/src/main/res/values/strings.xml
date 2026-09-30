@@ -6,4 +6,25 @@
     <!-- ACRA Disable Dialog -->
     <string name="acra_disable_message">Reports are only sent when the app crashes. This helps fix bugs and no personal data is sent.</string>
     <string name="acra_info_link">https://github.com/cssnr/todolist-android#crash-reporting</string>
+    <string name="acra_disable_title">Please Reconsider</string>
+    <string name="acra_disable_more_info">More Info</string>
+    <string name="acra_disable_confirm">Disable</string>
+    <string name="acra_disable_cancel">Cancel</string>
+
+    <!-- Settings -->
+    <string name="settings">Settings</string>
+    <string name="settings_group_application">Application</string>
+    <string name="settings_group_appearance">Appearance</string>
+    <string name="settings_group_debug">Debug</string>
+    <string name="settings_auto_open_last_list">Auto Open Last List</string>
+    <string name="settings_auto_open_last_list_summary">Open your last list on launch</string>
+    <string name="settings_show_search_categories">Show Search Categories</string>
+    <string name="settings_show_search_categories_summary">Show categories in suggestions</string>
+    <string name="settings_full_width_strikethrough">Full Width Strikethrough</string>
+    <string name="settings_full_width_strikethrough_summary">Strike line across the whole row</string>
+    <string name="settings_dynamic_color">Use Dynamic Color</string>
+    <string name="settings_dynamic_color_summary">Take colors from your wallpaper</string>
+    <string name="settings_dynamic_color_unsupported">Requires Android 12 or newer</string>
+    <string name="settings_crash_reporting">Enable Crash Reporting</string>
+    <string name="settings_crash_reporting_summary">Send Crash Reports</string>
 </resources>
