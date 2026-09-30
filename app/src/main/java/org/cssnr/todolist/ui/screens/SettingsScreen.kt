@@ -219,7 +219,8 @@ private val PICKER_CHECK_SIZE = 18.dp
  * [ColorSeed.DYNAMIC] resolves to the Material 3 baseline, so its swatch previews that baseline
  * instead. [ColorSeed.DEFAULT] is the baseline too, which makes the two identical there, so
  * [ColorSeed.DEFAULT] is left out of the picker entirely below Android 12 rather than being
- * offered as a second swatch that changes nothing.
+ * offered as a second swatch that changes nothing, and the surviving [ColorSeed.DYNAMIC] swatch
+ * is labeled for what it renders rather than for where it was meant to get its colors.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -241,7 +242,7 @@ private fun ColorSeedPicker(
         verticalArrangement = Arrangement.spacedBy(PICKER_ROW_GAP),
     ) {
         Text(
-            text = colorSeedLabel(selected),
+            text = colorSeedLabel(selected, dynamicSupported),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -260,7 +261,7 @@ private fun ColorSeedPicker(
                     Swatch(
                         color = swatch,
                         selected = seed == selected,
-                        contentDescription = colorSeedLabel(seed),
+                        contentDescription = colorSeedLabel(seed, dynamicSupported),
                         onClick = { onSelected(seed) },
                     )
                 }
@@ -269,17 +270,25 @@ private fun ColorSeedPicker(
 }
 
 @Composable
-private fun colorSeedLabel(seed: ColorSeed): String = stringResource(
-    when (seed) {
-        ColorSeed.DYNAMIC -> R.string.settings_color_dynamic
-        ColorSeed.TODO_LIST -> R.string.settings_color_todolist
-        ColorSeed.DEFAULT -> R.string.settings_color_default
-        ColorSeed.RED -> R.string.settings_color_red
-        ColorSeed.ORANGE -> R.string.settings_color_orange
-        ColorSeed.LIME -> R.string.settings_color_lime
-        ColorSeed.EMERALD -> R.string.settings_color_emerald
-    },
-)
+private fun colorSeedLabel(seed: ColorSeed, dynamicSupported: Boolean): String = when {
+    // Below Android 12 DYNAMIC has no wallpaper colors to read, so it produces the same baseline
+    // as DEFAULT. Naming it for what it actually renders keeps the one swatch offered honest
+    // instead of advertising a wallpaper the platform cannot give us.
+    seed == ColorSeed.DYNAMIC && !dynamicSupported ->
+        stringResource(R.string.settings_color_default)
+
+    else -> stringResource(
+        when (seed) {
+            ColorSeed.DYNAMIC -> R.string.settings_color_dynamic
+            ColorSeed.TODO_LIST -> R.string.settings_color_todolist
+            ColorSeed.DEFAULT -> R.string.settings_color_default
+            ColorSeed.RED -> R.string.settings_color_red
+            ColorSeed.ORANGE -> R.string.settings_color_orange
+            ColorSeed.LIME -> R.string.settings_color_lime
+            ColorSeed.EMERALD -> R.string.settings_color_emerald
+        },
+    )
+}
 
 @Composable
 private fun Swatch(
