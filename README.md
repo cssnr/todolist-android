@@ -21,6 +21,11 @@
 > :rotating_light: **Free and Open-Source Android is under threat!**  
 > Google will turn Android into a locked-down platform, restricting your essential freedom to install apps of your choice. Make your voice heard – [Keep Android Open](https://keepandroidopen.org/).
 
+[![Language: Kotlin](https://img.shields.io/badge/Language-Kotlin-7f52ff?style=for-the-badge&logo=kotlin&color=16a1e0&labelColor=1e1e2e)](https://kotlinlang.org/)
+[![Toolkit: Jetpack Compose](https://img.shields.io/badge/Toolkit-Jetpack_Compose-4285f4?style=for-the-badge&logo=jetpack-compose&color=16a1e0&labelColor=1e1e2e)](https://developer.android.com/compose)
+[![Design: Material 3](https://img.shields.io/badge/Design-Material_3-000000?style=for-the-badge&logo=material-design&color=16a1e0&labelColor=1e1e2e)](https://m3.material.io/)
+[![License: GPL-3.0](https://img.shields.io/github/license/cssnr/todolist-android?style=for-the-badge&logo=gplv3&color=16a1e0&labelColor=1e1e2e)](#GPL-3.0-1-ov-file)
+
 # TodoList Android
 
 <a title="TodoList Android" href="https://github.com/cssnr/todolist-android" target="_blank">
