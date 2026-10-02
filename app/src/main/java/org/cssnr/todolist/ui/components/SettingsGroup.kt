@@ -1,6 +1,5 @@
 package org.cssnr.todolist.ui.components
 
-import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -29,7 +28,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 
 /**
@@ -44,16 +42,14 @@ sealed interface SettingsTile {
 
     val enabled: Boolean
 
-    @get:StringRes
-    val titleRes: Int
+    val title: String
 
-    @get:StringRes
-    val summaryRes: Int?
+    val summary: String?
 
     data class Toggle(
         override val icon: Painter,
-        @get:StringRes override val titleRes: Int,
-        @get:StringRes override val summaryRes: Int? = null,
+        override val title: String,
+        override val summary: String? = null,
         val checked: Boolean,
         override val enabled: Boolean = true,
         val onCheckedChange: (Boolean) -> Unit,
@@ -61,8 +57,8 @@ sealed interface SettingsTile {
 
     data class Link(
         override val icon: Painter,
-        @get:StringRes override val titleRes: Int,
-        @get:StringRes override val summaryRes: Int? = null,
+        override val title: String,
+        override val summary: String? = null,
         override val enabled: Boolean = true,
         val onClick: () -> Unit,
     ) : SettingsTile
@@ -77,8 +73,8 @@ sealed interface SettingsTile {
      */
     data class Custom(
         override val icon: Painter,
-        @get:StringRes override val titleRes: Int,
-        @get:StringRes override val summaryRes: Int? = null,
+        override val title: String,
+        override val summary: String? = null,
         val content: @Composable () -> Unit,
     ) : SettingsTile {
         override val enabled: Boolean = true
@@ -93,7 +89,7 @@ sealed interface SettingsTile {
  */
 @Composable
 fun SettingsGroup(
-    @StringRes titleRes: Int,
+    title: String,
     tiles: List<SettingsTile>,
     modifier: Modifier = Modifier,
 ) {
@@ -103,7 +99,7 @@ fun SettingsGroup(
             .padding(horizontal = GROUP_MARGIN),
     ) {
         Text(
-            text = stringResource(titleRes),
+            text = title,
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(
@@ -168,13 +164,13 @@ private fun SettingsTileRow(
             Spacer(modifier = Modifier.width(TILE_ICON_GAP))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = stringResource(tile.titleRes),
+                    text = tile.title,
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                tile.summaryRes?.let { summaryRes ->
+                tile.summary?.let { summary ->
                     Text(
-                        text = stringResource(summaryRes),
+                        text = summary,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -186,6 +182,7 @@ private fun SettingsTileRow(
                     Switch(
                         checked = tile.checked,
                         onCheckedChange = null,
+                        enabled = tile.enabled,
                         thumbContent = {
                             Icon(
                                 imageVector = if (tile.checked) {

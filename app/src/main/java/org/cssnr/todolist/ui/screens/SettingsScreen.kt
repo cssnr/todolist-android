@@ -25,6 +25,7 @@ import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.FormatStrikethrough
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.AlertDialog
@@ -65,7 +66,10 @@ import org.cssnr.todolist.ui.viewmodel.SettingsState
 import org.cssnr.todolist.ui.viewmodel.SettingsViewModel
 
 @Composable
-fun SettingsRoute(viewModel: SettingsViewModel = viewModel()) {
+fun SettingsRoute(
+    viewModel: SettingsViewModel = viewModel(),
+    onNavigateToAbout: () -> Unit = {},
+) {
     val context = LocalContext.current
     val acraInfoLink = stringResource(R.string.acra_info_link)
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -83,6 +87,7 @@ fun SettingsRoute(viewModel: SettingsViewModel = viewModel()) {
                 Intent(Intent.ACTION_VIEW, acraInfoLink.toUri())
             )
         },
+        onAboutClick = onNavigateToAbout,
     )
 }
 
@@ -96,6 +101,7 @@ fun SettingsScreen(
     onColorSeedChange: (ColorSeed) -> Unit,
     onCrashReportingChange: (Boolean) -> Unit,
     onCrashReportingMoreInfo: () -> Unit,
+    onAboutClick: () -> Unit = {},
 ) {
     var showCrashReportingDialog by rememberSaveable { mutableStateOf(false) }
 
@@ -110,37 +116,37 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState()),
         ) {
             SettingsGroup(
-                titleRes = R.string.settings_group_application,
+                title = stringResource(R.string.settings_group_application),
                 tiles = listOf(
                     SettingsTile.Toggle(
                         icon = rememberVectorPainter(Icons.AutoMirrored.Filled.ExitToApp),
-                        titleRes = R.string.settings_auto_open_last_list,
-                        summaryRes = R.string.settings_auto_open_last_list_summary,
+                        title = stringResource(R.string.settings_auto_open_last_list),
+                        summary = stringResource(R.string.settings_auto_open_last_list_summary),
                         checked = settings.autoOpenLastList,
                         onCheckedChange = onAutoOpenLastListChange,
                     ),
                     SettingsTile.Toggle(
                         icon = rememberVectorPainter(Icons.Filled.Category),
-                        titleRes = R.string.settings_show_search_categories,
-                        summaryRes = R.string.settings_show_search_categories_summary,
+                        title = stringResource(R.string.settings_show_search_categories),
+                        summary = stringResource(R.string.settings_show_search_categories_summary),
                         checked = settings.showSearchCategories,
                         onCheckedChange = onShowSearchCategoriesChange,
                     ),
                     SettingsTile.Toggle(
                         icon = rememberVectorPainter(Icons.Filled.FormatStrikethrough),
-                        titleRes = R.string.settings_full_width_strikethrough,
-                        summaryRes = R.string.settings_full_width_strikethrough_summary,
+                        title = stringResource(R.string.settings_full_width_strikethrough),
+                        summary = stringResource(R.string.settings_full_width_strikethrough_summary),
                         checked = settings.fullWidthStrikethrough,
                         onCheckedChange = onFullWidthStrikethroughChange,
                     ),
                 ),
             )
             SettingsGroup(
-                titleRes = R.string.settings_group_appearance,
+                title = stringResource(R.string.settings_group_appearance),
                 tiles = listOf(
                     SettingsTile.Custom(
                         icon = rememberVectorPainter(Icons.Filled.Palette),
-                        titleRes = R.string.settings_color_scheme,
+                        title = stringResource(R.string.settings_color_scheme),
                         content = {
                             ColorSeedPicker(
                                 selected = settings.colorSeed,
@@ -151,12 +157,12 @@ fun SettingsScreen(
                 ),
             )
             SettingsGroup(
-                titleRes = R.string.settings_group_debug,
+                title = stringResource(R.string.settings_group_debug),
                 tiles = listOf(
                     SettingsTile.Toggle(
                         icon = rememberVectorPainter(Icons.Filled.BugReport),
-                        titleRes = R.string.settings_crash_reporting,
-                        summaryRes = R.string.settings_crash_reporting_summary,
+                        title = stringResource(R.string.settings_crash_reporting),
+                        summary = stringResource(R.string.settings_crash_reporting_summary),
                         checked = settings.crashReporting,
                         onCheckedChange = { newValue ->
                             if (newValue) {
@@ -165,6 +171,20 @@ fun SettingsScreen(
                                 showCrashReportingDialog = true
                             }
                         },
+                    ),
+                ),
+            )
+            SettingsGroup(
+                title = stringResource(R.string.settings_group_about),
+                tiles = listOf(
+                    SettingsTile.Link(
+                        icon = rememberVectorPainter(Icons.Filled.Info),
+                        title = stringResource(R.string.about_todolist),
+                        summary = stringResource(
+                            R.string.about_todolist_summary,
+                            org.cssnr.todolist.BuildConfig.VERSION_NAME,
+                        ),
+                        onClick = onAboutClick,
                     ),
                 ),
             )
@@ -354,6 +374,7 @@ fun SettingsScreenPreview() {
             onColorSeedChange = {},
             onCrashReportingChange = {},
             onCrashReportingMoreInfo = {},
+            onAboutClick = {},
         )
     }
 }
