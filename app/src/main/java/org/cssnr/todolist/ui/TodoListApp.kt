@@ -43,6 +43,8 @@ import org.cssnr.todolist.ui.navigation.ListImport
 import org.cssnr.todolist.ui.navigation.Lists
 import org.cssnr.todolist.ui.navigation.ListsSection
 import org.cssnr.todolist.ui.navigation.Settings
+import org.cssnr.todolist.ui.navigation.About
+import org.cssnr.todolist.ui.screens.AboutRoute
 import org.cssnr.todolist.ui.screens.ExportItemsRoute
 import org.cssnr.todolist.ui.screens.ImportItemsRoute
 import org.cssnr.todolist.ui.screens.ListDetailRoute
@@ -72,7 +74,8 @@ fun TodoListApp() {
     var detailLoaded by remember { mutableStateOf(false) }
 
     val isFullPageTool = currentDestination?.hasRoute<ListImport>() == true ||
-        currentDestination?.hasRoute<ListExport>() == true
+        currentDestination?.hasRoute<ListExport>() == true ||
+        currentDestination?.hasRoute<About>() == true
 
     var autoOpened by rememberSaveable { mutableStateOf(false) }
     var suppressListDetailTransition by remember { mutableStateOf(false) }
@@ -229,7 +232,14 @@ fun TodoListApp() {
                 }
             }
             composable<Settings> {
-                SettingsRoute()
+                SettingsRoute(
+                    onNavigateToAbout = { navController.navigate(About) }
+                )
+            }
+            composable<About> {
+                AboutRoute(
+                    onBack = { navController.navigateUp() },
+                )
             }
         }
     }

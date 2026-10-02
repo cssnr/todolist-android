@@ -12,6 +12,9 @@ data object Lists
 data object Settings
 
 @Serializable
+data object About
+
+@Serializable
 data class ListDetail(val listId: Long)
 
 @Serializable

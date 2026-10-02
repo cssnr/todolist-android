@@ -1,6 +1,5 @@
 package org.cssnr.todolist.ui.components
 
-import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -22,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,7 +29,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 
 /**
@@ -44,16 +43,14 @@ sealed interface SettingsTile {
 
     val enabled: Boolean
 
-    @get:StringRes
-    val titleRes: Int
+    val title: String
 
-    @get:StringRes
-    val summaryRes: Int?
+    val summary: String?
 
     data class Toggle(
         override val icon: Painter,
-        @get:StringRes override val titleRes: Int,
-        @get:StringRes override val summaryRes: Int? = null,
+        override val title: String,
+        override val summary: String? = null,
         val checked: Boolean,
         override val enabled: Boolean = true,
         val onCheckedChange: (Boolean) -> Unit,
@@ -61,8 +58,24 @@ sealed interface SettingsTile {
 
     data class Link(
         override val icon: Painter,
-        @get:StringRes override val titleRes: Int,
-        @get:StringRes override val summaryRes: Int? = null,
+        override val title: String,
+        override val summary: String? = null,
+        override val enabled: Boolean = true,
+        val onClick: () -> Unit,
+    ) : SettingsTile
+
+    /**
+     * A row with a trailing text button, for the one action that needs a visible label
+     * (choosing devices, for instance).
+     *
+     * Row tap and button tap fire the same [onClick]: the button is a visual affordance,
+     * not a second handler, so there is no nested-clickable conflict to resolve.
+     */
+    data class Action(
+        override val icon: Painter,
+        override val title: String,
+        override val summary: String? = null,
+        val actionLabel: String,
         override val enabled: Boolean = true,
         val onClick: () -> Unit,
     ) : SettingsTile
@@ -77,8 +90,8 @@ sealed interface SettingsTile {
      */
     data class Custom(
         override val icon: Painter,
-        @get:StringRes override val titleRes: Int,
-        @get:StringRes override val summaryRes: Int? = null,
+        override val title: String,
+        override val summary: String? = null,
         val content: @Composable () -> Unit,
     ) : SettingsTile {
         override val enabled: Boolean = true
@@ -93,7 +106,7 @@ sealed interface SettingsTile {
  */
 @Composable
 fun SettingsGroup(
-    @StringRes titleRes: Int,
+    title: String,
     tiles: List<SettingsTile>,
     modifier: Modifier = Modifier,
 ) {
@@ -103,7 +116,7 @@ fun SettingsGroup(
             .padding(horizontal = GROUP_MARGIN),
     ) {
         Text(
-            text = stringResource(titleRes),
+            text = title,
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(
@@ -168,13 +181,13 @@ private fun SettingsTileRow(
             Spacer(modifier = Modifier.width(TILE_ICON_GAP))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = stringResource(tile.titleRes),
+                    text = tile.title,
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                tile.summaryRes?.let { summaryRes ->
+                tile.summary?.let { summary ->
                     Text(
-                        text = stringResource(summaryRes),
+                        text = summary,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -186,6 +199,7 @@ private fun SettingsTileRow(
                     Switch(
                         checked = tile.checked,
                         onCheckedChange = null,
+                        enabled = tile.enabled,
                         thumbContent = {
                             Icon(
                                 imageVector = if (tile.checked) {
@@ -203,6 +217,16 @@ private fun SettingsTileRow(
                 is SettingsTile.Link,
                 is SettingsTile.Custom,
                 -> Unit
+
+                is SettingsTile.Action -> {
+                    Spacer(modifier = Modifier.width(TILE_TRAILING_GAP))
+                    TextButton(
+                        onClick = tile.onClick,
+                        enabled = tile.enabled,
+                    ) {
+                        Text(text = tile.actionLabel)
+                    }
+                }
             }
         }
         // Custom content sits below the title row and spans the full tile width, which is the
@@ -227,6 +251,7 @@ private val SettingsTile.onClick: () -> Unit
     get() = when (this) {
         is SettingsTile.Toggle -> { { onCheckedChange(!checked) } }
         is SettingsTile.Link -> onClick
+        is SettingsTile.Action -> onClick
         // Never reached: Custom is excluded from the row-wide clickable in SettingsTileRow.
         is SettingsTile.Custom -> { {} }
     }
