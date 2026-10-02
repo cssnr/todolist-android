@@ -21,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,6 +60,22 @@ sealed interface SettingsTile {
         override val icon: Painter,
         override val title: String,
         override val summary: String? = null,
+        override val enabled: Boolean = true,
+        val onClick: () -> Unit,
+    ) : SettingsTile
+
+    /**
+     * A row with a trailing text button, for the one action that needs a visible label
+     * (choosing devices, for instance).
+     *
+     * Row tap and button tap fire the same [onClick]: the button is a visual affordance,
+     * not a second handler, so there is no nested-clickable conflict to resolve.
+     */
+    data class Action(
+        override val icon: Painter,
+        override val title: String,
+        override val summary: String? = null,
+        val actionLabel: String,
         override val enabled: Boolean = true,
         val onClick: () -> Unit,
     ) : SettingsTile
@@ -200,6 +217,16 @@ private fun SettingsTileRow(
                 is SettingsTile.Link,
                 is SettingsTile.Custom,
                 -> Unit
+
+                is SettingsTile.Action -> {
+                    Spacer(modifier = Modifier.width(TILE_TRAILING_GAP))
+                    TextButton(
+                        onClick = tile.onClick,
+                        enabled = tile.enabled,
+                    ) {
+                        Text(text = tile.actionLabel)
+                    }
+                }
             }
         }
         // Custom content sits below the title row and spans the full tile width, which is the
@@ -224,6 +251,7 @@ private val SettingsTile.onClick: () -> Unit
     get() = when (this) {
         is SettingsTile.Toggle -> { { onCheckedChange(!checked) } }
         is SettingsTile.Link -> onClick
+        is SettingsTile.Action -> onClick
         // Never reached: Custom is excluded from the row-wide clickable in SettingsTileRow.
         is SettingsTile.Custom -> { {} }
     }

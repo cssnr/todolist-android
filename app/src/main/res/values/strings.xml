@@ -43,6 +43,8 @@
     <string name="about_view_source_summary">View Source Code on GitHub</string>
     <string name="about_visit_website">Visit Website</string>
     <string name="about_visit_website_summary">View Developer\'s Website</string>
+    <string name="about_discord">Discord</string>
+    <string name="about_discord_summary">Chat on Discord</string>
     <string name="about_support_development">Support</string>
     <string name="about_support_development_summary">Donate on Ko-fi</string>
 </resources>
