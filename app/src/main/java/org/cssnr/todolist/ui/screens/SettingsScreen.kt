@@ -104,6 +104,7 @@ fun SettingsScreen(
     onAboutClick: () -> Unit = {},
 ) {
     var showCrashReportingDialog by rememberSaveable { mutableStateOf(false) }
+    val appName = stringResource(R.string.app_name)
 
     Scaffold(
         topBar = { TopAppBar(title = { Text(stringResource(R.string.settings)) }) },
@@ -179,9 +180,10 @@ fun SettingsScreen(
                 tiles = listOf(
                     SettingsTile.Link(
                         icon = rememberVectorPainter(Icons.Filled.Info),
-                        title = stringResource(R.string.about_todolist),
+                        title = stringResource(R.string.about_todolist, appName),
                         summary = stringResource(
                             R.string.about_todolist_summary,
+                            appName,
                             org.cssnr.todolist.BuildConfig.VERSION_NAME,
                         ),
                         onClick = onAboutClick,
