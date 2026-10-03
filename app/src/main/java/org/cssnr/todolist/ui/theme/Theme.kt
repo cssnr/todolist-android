@@ -9,43 +9,55 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import com.materialkolor.rememberDynamicColorScheme
-import org.cssnr.todolist.data.ColorSeed
+import org.cssnr.todolist.data.SettingsRepository
 
 /**
- * The color scheme a [ColorSeed] resolves to in the current light/dark mode.
+ * The color scheme for the current dynamic/static choice in the current light/dark mode.
  *
- * Nothing here is hand-written: a seed entry is expanded into the whole Material 3 scheme by
- * MaterialKolor (Google's own Material Color Utilities algorithm, SchemeTonalSpot at contrast
- * 0.0), which is the same variant Material You uses on Android 12/13.
+ * A static seed is expanded into the whole Material 3 scheme by MaterialKolor (Google's own
+ * Material Color Utilities algorithm, SchemeTonalSpot at contrast 0.0), the same variant
+ * Material You uses on Android 12/13.
  *
- * [ColorSeed.DYNAMIC] falls back to the generated default palette below Android 12, where the
- * platform has no wallpaper colors to read, so the app never renders an empty theme.
+ * Dynamic falls back to the generated default palette below Android 12, where the platform has
+ * no wallpaper colors to read, so the app never renders an empty theme.
  */
 @Composable
-fun colorSchemeFor(seed: ColorSeed, darkTheme: Boolean): ColorScheme = when {
-    seed.seed != null ->
-        rememberDynamicColorScheme(seedColor = seed.seed, isDark = darkTheme)
-
-    seed == ColorSeed.DYNAMIC && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+fun colorSchemeFor(dynamic: Boolean, seedColor: Color, darkTheme: Boolean): ColorScheme = when {
+    dynamic && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
         val context = LocalContext.current
         if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
     }
 
-    // DEFAULT is the untouched Material 3 baseline, which is precisely what these builders return
-    // with no overrides, so there is nothing to generate for it.
-    else -> if (darkTheme) darkColorScheme() else lightColorScheme()
+    // The baseline builders return the untouched Material 3 baseline with no overrides.
+    dynamic -> if (darkTheme) darkColorScheme() else lightColorScheme()
+
+    else -> rememberDynamicColorScheme(seedColor = seedColor, isDark = darkTheme)
 }
+
+/**
+ * The vivid seed color for a hue on the picker ramp (saturation and value fixed at 1).
+ * Slider, preview, and theme all derive from the persisted hue through this one function,
+ * so the three can never disagree.
+ */
+fun seedColorForHue(hue: Float): Color =
+    Color(android.graphics.Color.HSVToColor(floatArrayOf(hue, 1f, 1f)))
 
 @Composable
 fun TodoListTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    seed: ColorSeed = ColorSeed.DYNAMIC,
+    dynamic: Boolean = true,
+    seedHue: Float = SettingsRepository.DEFAULT_SEED_HUE,
     content: @Composable () -> Unit,
 ) {
     MaterialTheme(
-        colorScheme = colorSchemeFor(seed = seed, darkTheme = darkTheme),
+        colorScheme = colorSchemeFor(
+            dynamic = dynamic,
+            seedColor = seedColorForHue(seedHue),
+            darkTheme = darkTheme,
+        ),
         typography = Typography,
         content = content,
     )

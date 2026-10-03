@@ -82,19 +82,21 @@ sealed interface SettingsTile {
 
     /**
      * A row whose body is arbitrary composable content laid out under the title instead of a
-     * trailing switch, for options that need more room than a switch allows (a row of color
-     * swatches, for instance).
+     * trailing switch, for options that need more room than a switch allows (a color slider,
+     * for instance).
      *
      * The title row is not clickable here: [content] owns its own hit targets, so a single
-     * row-wide click handler would swallow them and fire for taps between the swatches.
+     * row-wide click handler would swallow them and fire for taps between the slider and its
+     * edges. [content] should honor [enabled] for its own hit targets (a Slider's `enabled`
+     * flag, for instance); the row dims the whole tile, title included.
      */
     data class Custom(
         override val icon: Painter,
         override val title: String,
         override val summary: String? = null,
+        override val enabled: Boolean = true,
         val content: @Composable () -> Unit,
     ) : SettingsTile {
-        override val enabled: Boolean = true
     }
 }
 
@@ -230,11 +232,13 @@ private fun SettingsTileRow(
             }
         }
         // Custom content sits below the title row and spans the full tile width, which is the
-        // only way a set of swatches gets enough room without crowding the title.
+        // only way a slider gets enough room without crowding the title. It dims with the
+        // title row so a disabled Custom tile reads as one disabled tile, like every other kind.
         if (tile is SettingsTile.Custom) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .alpha(if (tile.enabled) 1f else DISABLED_CONTENT_ALPHA)
                     .padding(
                         start = TILE_CUSTOM_CONTENT_START_PADDING,
                         end = TILE_PADDING,
