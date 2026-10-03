@@ -1,14 +1,15 @@
 package org.cssnr.todolist.ui
 
-import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -23,45 +24,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination.Companion.hasRoute
-import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navigation
-import androidx.navigation.toRoute
 import kotlinx.coroutines.delay
+import org.cssnr.todolist.ui.navigation.About
 import org.cssnr.todolist.ui.navigation.ListDetail
 import org.cssnr.todolist.ui.navigation.ListExport
 import org.cssnr.todolist.ui.navigation.ListImport
-import org.cssnr.todolist.ui.navigation.Lists
-import org.cssnr.todolist.ui.navigation.ListsSection
-import org.cssnr.todolist.ui.navigation.Settings
-import org.cssnr.todolist.ui.navigation.About
-import org.cssnr.todolist.ui.screens.AboutRoute
-import org.cssnr.todolist.ui.screens.ExportItemsRoute
-import org.cssnr.todolist.ui.screens.ImportItemsRoute
-import org.cssnr.todolist.ui.screens.ListDetailRoute
-import org.cssnr.todolist.ui.screens.ListsRoute
-import org.cssnr.todolist.ui.screens.SettingsRoute
+import org.cssnr.todolist.ui.navigation.TodoListNavHost
+import org.cssnr.todolist.ui.navigation.navigateToTopLevel
+import org.cssnr.todolist.ui.navigation.topLevelDestinations
 import org.cssnr.todolist.ui.viewmodel.StartupScreen
 import org.cssnr.todolist.ui.viewmodel.StartupViewModel
 import kotlin.time.Duration.Companion.milliseconds
-
-enum class Destination(
-    val route: Any,
-    val label: String,
-    val icon: ImageVector,
-) {
-    LISTS(ListsSection, "Lists", Icons.AutoMirrored.Filled.List),
-    SETTINGS(Settings, "Settings", Icons.Filled.Settings),
-}
 
 @Composable
 fun TodoListApp() {
@@ -72,6 +52,9 @@ fun TodoListApp() {
     val startupScreen by startupViewModel.startupScreen.collectAsStateWithLifecycle()
     var listsLoaded by remember { mutableStateOf(false) }
     var detailLoaded by remember { mutableStateOf(false) }
+
+    val selectedDestination =
+        topLevelDestinations.firstOrNull { it.isCurrent(currentDestination) }
 
     val isFullPageTool = currentDestination?.hasRoute<ListImport>() == true ||
         currentDestination?.hasRoute<ListExport>() == true ||
@@ -107,147 +90,55 @@ fun TodoListApp() {
         contentWindowInsets = ScaffoldDefaults.contentWindowInsets
             .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom),
         bottomBar = {
-            if (!isFullPageTool) {
+            // Only top level destinations show the bar. About is not one, so the bar goes away while
+            // it is on top. Import/Export live inside ListsSection so they would otherwise keep the
+            // Lists tab lit, so they are hidden explicitly to preserve the full-page tool behavior.
+            // AnimatedVisibility keeps the bar laid out while it slides away, so the Scaffold
+            // content padding animates with it instead of jumping the moment navigation starts.
+            AnimatedVisibility(
+                visible = selectedDestination != null && !isFullPageTool,
+                enter = slideInVertically(animationSpec = tween(300)) { it } +
+                    fadeIn(animationSpec = tween(300)),
+                exit = slideOutVertically(animationSpec = tween(300)) { it } +
+                    fadeOut(animationSpec = tween(300)),
+            ) {
                 NavigationBar {
-                    Destination.entries.forEach { destination ->
-                        val selected = currentDestination?.hierarchy
-                            ?.any { it.hasRoute(destination.route::class) } == true
+                    topLevelDestinations.forEach { destination ->
+                        val selected = destination == selectedDestination
                         NavigationBarItem(
                             selected = selected,
                             onClick = {
-                                when (destination) {
-                                    Destination.LISTS -> {
-                                        if (currentDestination?.hasRoute<Lists>() != true) {
-                                            val poppedSettings = navController
-                                                .popBackStack<Settings>(inclusive = true)
-                                            if (!poppedSettings) {
-                                                navController.navigate(Lists) {
-                                                    popUpTo(navController.graph.findStartDestination().id)
-                                                    launchSingleTop = true
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    Destination.SETTINGS -> {
-                                        if (currentDestination?.hasRoute<Settings>() != true) {
-                                            navController.navigate(destination.route) {
-                                                launchSingleTop = true
-                                            }
-                                        }
-                                    }
-                                }
+                                navController.navigateToTopLevel(destination, reselect = selected)
                             },
                             icon = {
                                 Icon(
-                                    imageVector = destination.icon,
-                                    contentDescription = destination.label,
+                                    imageVector = if (selected) {
+                                        destination.selectedIcon
+                                    } else {
+                                        destination.unselectedIcon
+                                    },
+                                    // The label below already carries the name, so repeating it here
+                                    // would have it announced twice.
+                                    contentDescription = null,
                                 )
                             },
-                            label = { Text(destination.label) },
+                            label = { Text(stringResource(destination.labelRes)) },
                         )
                     }
                 }
             }
         },
     ) { innerPadding ->
-        NavHost(
+        TodoListNavHost(
             navController = navController,
-            startDestination = ListsSection,
+            suppressListDetailTransition = suppressListDetailTransition,
+            onListsLoaded = { listsLoaded = true },
+            onDetailLoaded = { detailLoaded = true },
+            // Consuming the insets the Scaffold already turned into padding stops every screen
+            // below from applying them a second time.
             modifier = Modifier
                 .padding(innerPadding)
                 .consumeWindowInsets(innerPadding),
-        ) {
-            navigation<ListsSection>(startDestination = Lists) {
-                composable<Lists> {
-                    ListsRoute(
-                        onOpenList = { listId -> navController.navigate(ListDetail(listId)) },
-                        onLoaded = { listsLoaded = true },
-                    )
-                }
-                composable<ListDetail>(
-                    enterTransition = {
-                        if (isListDetailNavigation(suppressListDetailTransition)) {
-                            slideIntoContainer(
-                                AnimatedContentTransitionScope.SlideDirection.Left,
-                                animationSpec = tween(300),
-                            )
-                        } else {
-                            null
-                        }
-                    },
-                    exitTransition = {
-                        if (isListDetailNavigation(suppressListDetailTransition)) {
-                            slideOutOfContainer(
-                                AnimatedContentTransitionScope.SlideDirection.Left,
-                                animationSpec = tween(300),
-                            )
-                        } else {
-                            null
-                        }
-                    },
-                    popEnterTransition = {
-                        if (isListDetailNavigation(suppressListDetailTransition)) {
-                            slideIntoContainer(
-                                AnimatedContentTransitionScope.SlideDirection.Right,
-                                animationSpec = tween(300),
-                            )
-                        } else {
-                            null
-                        }
-                    },
-                    popExitTransition = {
-                        if (isListDetailNavigation(suppressListDetailTransition)) {
-                            slideOutOfContainer(
-                                AnimatedContentTransitionScope.SlideDirection.Right,
-                                animationSpec = tween(300),
-                            )
-                        } else {
-                            null
-                        }
-                    },
-                ) { backStackEntry ->
-                    val detail = backStackEntry.toRoute<ListDetail>()
-                    ListDetailRoute(
-                        listId = detail.listId,
-                        onBack = { navController.navigateUp() },
-                        onOpenImport = { navController.navigate(ListImport(detail.listId)) },
-                        onOpenExport = { navController.navigate(ListExport(detail.listId)) },
-                        onLoaded = { detailLoaded = true },
-                    )
-                }
-                composable<ListImport> { backStackEntry ->
-                    val importRoute = backStackEntry.toRoute<ListImport>()
-                    ImportItemsRoute(
-                        listId = importRoute.listId,
-                        onBack = { navController.navigateUp() },
-                    )
-                }
-                composable<ListExport> { backStackEntry ->
-                    val exportRoute = backStackEntry.toRoute<ListExport>()
-                    ExportItemsRoute(
-                        listId = exportRoute.listId,
-                        onBack = { navController.navigateUp() },
-                    )
-                }
-            }
-            composable<Settings> {
-                SettingsRoute(
-                    onNavigateToAbout = { navController.navigate(About) }
-                )
-            }
-            composable<About> {
-                AboutRoute(
-                    onBack = { navController.navigateUp() },
-                )
-            }
-        }
+        )
     }
 }
-
-private fun AnimatedContentTransitionScope<NavBackStackEntry>.isListDetailNavigation(
-    suppress: Boolean,
-): Boolean =
-    !suppress &&
-            initialState.destination.hierarchy.any { it.hasRoute<ListsSection>() } &&
-            targetState.destination.hierarchy.any { it.hasRoute<ListsSection>() }
