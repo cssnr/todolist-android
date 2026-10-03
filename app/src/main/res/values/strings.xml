@@ -47,4 +47,5 @@
     <string name="about_discord_summary">Chat on Discord</string>
     <string name="about_support_development">Support</string>
     <string name="about_support_development_summary">Donate on Ko-fi</string>
+    <string name="about_contributors">Supporters</string>
 </resources>
