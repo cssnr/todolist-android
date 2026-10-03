@@ -7,8 +7,8 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
-import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -24,7 +24,8 @@ class SettingsRepository(private val context: Context) {
         val LAST_OPENED_LIST_ID = longPreferencesKey("last_opened_list_id")
         val SHOW_SEARCH_CATEGORIES = booleanPreferencesKey("show_search_categories")
         val FULL_WIDTH_STRIKETHROUGH = booleanPreferencesKey("full_width_strikethrough")
-        val COLOR_SEED = stringPreferencesKey("color_seed")
+        val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
+        val SEED_HUE = floatPreferencesKey("seed_hue")
         const val CRASH_REPORTING = "acra.enable"
     }
 
@@ -44,13 +45,11 @@ class SettingsRepository(private val context: Context) {
     val fullWidthStrikethrough: Flow<Boolean> = context.settingsDataStore.data
         .map { preferences -> preferences[Keys.FULL_WIDTH_STRIKETHROUGH] ?: false }
 
-    // The seed is stored by name rather than index so reordering or inserting an entry in
-    // ColorSeed can never silently repoint an existing user's choice at a different color.
-    // Renaming an entry is the one case this does not cover: fromName falls back to DYNAMIC, so
-    // a rename quietly resets anyone who had picked that entry. Keep the old names alive as
-    // deprecated constants if an entry ever has to be renamed.
-    val colorSeed: Flow<ColorSeed> = context.settingsDataStore.data
-        .map { preferences -> ColorSeed.fromName(preferences[Keys.COLOR_SEED]) }
+    val dynamicColor: Flow<Boolean> = context.settingsDataStore.data
+        .map { preferences -> preferences[Keys.DYNAMIC_COLOR] ?: true }
+
+    val seedHue: Flow<Float> = context.settingsDataStore.data
+        .map { preferences -> preferences[Keys.SEED_HUE] ?: DEFAULT_SEED_HUE }
 
     val crashReporting: Flow<Boolean> = callbackFlow {
         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
@@ -81,9 +80,15 @@ class SettingsRepository(private val context: Context) {
         }
     }
 
-    suspend fun setColorSeed(seed: ColorSeed) {
+    suspend fun setDynamicColor(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
-            preferences[Keys.COLOR_SEED] = seed.name
+            preferences[Keys.DYNAMIC_COLOR] = enabled
+        }
+    }
+
+    suspend fun setSeedHue(hue: Float) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[Keys.SEED_HUE] = hue
         }
     }
 
@@ -95,5 +100,10 @@ class SettingsRepository(private val context: Context) {
         context.settingsDataStore.edit { preferences ->
             preferences[Keys.LAST_OPENED_LIST_ID] = listId
         }
+    }
+
+    companion object {
+        // Hue of TodoList blue (#16A1E0) on the vivid (S=V=1) picker ramp.
+        const val DEFAULT_SEED_HUE = 198.71f
     }
 }

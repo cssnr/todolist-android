@@ -8,14 +8,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import org.cssnr.todolist.data.ColorSeed
 import org.cssnr.todolist.data.SettingsRepository
 
 data class SettingsState(
     val autoOpenLastList: Boolean = true,
     val showSearchCategories: Boolean = true,
     val fullWidthStrikethrough: Boolean = false,
-    val colorSeed: ColorSeed = ColorSeed.DYNAMIC,
+    val dynamicColor: Boolean = true,
+    val seedHue: Float = SettingsRepository.DEFAULT_SEED_HUE,
     val crashReporting: Boolean = true,
 )
 
@@ -24,17 +24,29 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val settingsRepository = SettingsRepository(application)
 
     val settings: StateFlow<SettingsState?> = combine(
-        settingsRepository.autoOpenLastList,
-        settingsRepository.showSearchCategories,
-        settingsRepository.fullWidthStrikethrough,
-        settingsRepository.colorSeed,
-        settingsRepository.crashReporting,
-    ) { autoOpenLastList, showSearchCategories, fullWidthStrikethrough, colorSeed, crashReporting ->
+        combine(
+            settingsRepository.autoOpenLastList,
+            settingsRepository.showSearchCategories,
+            settingsRepository.fullWidthStrikethrough,
+        ) { autoOpenLastList, showSearchCategories, fullWidthStrikethrough ->
+            Triple(autoOpenLastList, showSearchCategories, fullWidthStrikethrough)
+        },
+        combine(
+            settingsRepository.dynamicColor,
+            settingsRepository.seedHue,
+            settingsRepository.crashReporting,
+        ) { dynamicColor, seedHue, crashReporting ->
+            Triple(dynamicColor, seedHue, crashReporting)
+        },
+    ) { prefs, appearance ->
+        val (autoOpenLastList, showSearchCategories, fullWidthStrikethrough) = prefs
+        val (dynamicColor, seedHue, crashReporting) = appearance
         SettingsState(
             autoOpenLastList = autoOpenLastList,
             showSearchCategories = showSearchCategories,
             fullWidthStrikethrough = fullWidthStrikethrough,
-            colorSeed = colorSeed,
+            dynamicColor = dynamicColor,
+            seedHue = seedHue,
             crashReporting = crashReporting,
         )
     }.stateIn(
@@ -61,9 +73,15 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    fun setColorSeed(seed: ColorSeed) {
+    fun setDynamicColor(enabled: Boolean) {
         viewModelScope.launch {
-            settingsRepository.setColorSeed(seed)
+            settingsRepository.setDynamicColor(enabled)
+        }
+    }
+
+    fun setSeedHue(hue: Float) {
+        viewModelScope.launch {
+            settingsRepository.setSeedHue(hue)
         }
     }
 
