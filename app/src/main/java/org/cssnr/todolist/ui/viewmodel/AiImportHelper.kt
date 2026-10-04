@@ -139,6 +139,8 @@ object AiImportHelper {
             Return ONLY a JSON array, no markdown, no explanation.
             Each element: {"name": "<item name>", "category": "<category>" or null}.
             Rules: trim names, one item per element, drop empty items, max 100 items.
+            Format each item name and any new category in Title Case (e.g. Green Peppers, Dish Soap).
+            Reuse existing categories with their exact spelling.
         """.trimIndent()
     }
 
