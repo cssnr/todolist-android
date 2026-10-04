@@ -1,5 +1,6 @@
 package org.cssnr.todolist.ui.screens
 
+import android.annotation.SuppressLint
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -765,6 +766,7 @@ internal fun ConfirmActionDialog(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
+@SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
 private fun EditItemSheet(
     item: TodoItemEntity,
@@ -782,6 +784,9 @@ private fun EditItemSheet(
 
     // ModalBottomSheet shrinks its container by the IME, but only pads the top for the status bar
     // and leaves the bottom to us, so cap the content to the space actually left on screen.
+    // Intentionally uses LocalConfiguration: we want the stable full-screen height minus the
+    // live IME/nav inset. LocalWindowInfo.containerSize inside the sheet's dialog window is
+    // the wrong signal here and breaks the cap when the keyboard shows.
     val screenHeight = with(density) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
     val bottomInset = maxOf(
         WindowInsets.ime.getBottom(density),
