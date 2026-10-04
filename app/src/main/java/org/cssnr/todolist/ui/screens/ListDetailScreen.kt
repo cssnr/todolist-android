@@ -76,6 +76,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -298,12 +299,20 @@ fun ListDetailScreen(
     }
 
     val visibleItems = if (hideCompleted) items.filter { !it.done } else items
+    val totalCount = items.size
+    val remainingCount = items.count { !it.done }
 
     Scaffold(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text(list?.name.orEmpty()) },
+                title = {
+                    Text(
+                        text = list?.name.orEmpty(),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -313,6 +322,14 @@ fun ListDetailScreen(
                     }
                 },
                 actions = {
+                    if (items.isNotEmpty()) {
+                        Text(
+                            text = "$remainingCount of $totalCount",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(end = 4.dp),
+                        )
+                    }
                     IconButton(onClick = { onToggleHideCompleted(!hideCompleted) }) {
                         Icon(
                             imageVector = if (hideCompleted) {
