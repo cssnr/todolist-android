@@ -13,6 +13,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import androidx.navigation.toRoute
 import org.cssnr.todolist.ui.screens.AboutRoute
+import org.cssnr.todolist.ui.screens.AiImportRoute
 import org.cssnr.todolist.ui.screens.ExportItemsRoute
 import org.cssnr.todolist.ui.screens.ImportItemsRoute
 import org.cssnr.todolist.ui.screens.ListDetailRoute
@@ -93,6 +94,7 @@ fun TodoListNavHost(
                     listId = detail.listId,
                     onBack = { navController.navigateUp() },
                     onOpenImport = { navController.navigate(ListImport(detail.listId)) },
+                    onOpenAiImport = { navController.navigate(ListAiImport(detail.listId)) },
                     onOpenExport = { navController.navigate(ListExport(detail.listId)) },
                     onLoaded = onDetailLoaded,
                 )
@@ -134,6 +136,26 @@ fun TodoListNavHost(
                 val exportRoute = backStackEntry.toRoute<ListExport>()
                 ExportItemsRoute(
                     listId = exportRoute.listId,
+                    onBack = { navController.navigateUp() },
+                )
+            }
+            composable<ListAiImport>(
+                enterTransition = {
+                    slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Left,
+                        animationSpec = tween(300),
+                    )
+                },
+                popExitTransition = {
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Right,
+                        animationSpec = tween(300),
+                    )
+                },
+            ) { backStackEntry ->
+                val aiRoute = backStackEntry.toRoute<ListAiImport>()
+                AiImportRoute(
+                    listId = aiRoute.listId,
                     onBack = { navController.navigateUp() },
                 )
             }

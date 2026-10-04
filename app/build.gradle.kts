@@ -69,6 +69,8 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.material.kolor)
+    implementation(libs.mlkit.genai.prompt)
+    implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.core)
     implementation(libs.kotlinx.serialization.json)
     ksp(libs.androidx.room3.compiler)

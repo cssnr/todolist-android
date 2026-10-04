@@ -1,0 +1,228 @@
+package org.cssnr.todolist.ui.screens
+
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import org.cssnr.todolist.ui.theme.TodoListTheme
+import org.cssnr.todolist.ui.viewmodel.AiImportHelper
+import org.cssnr.todolist.ui.viewmodel.ListDetailViewModel
+
+@Composable
+fun AiImportRoute(
+    listId: Long,
+    onBack: () -> Unit,
+    viewModel: ListDetailViewModel = viewModel(
+        factory = ListDetailViewModel.factory(listId),
+    ),
+) {
+    val categories by viewModel.categories.collectAsStateWithLifecycle()
+    AiImportScreen(
+        existingCategories = categories,
+        onBack = onBack,
+        onImportParsed = viewModel::importParsed,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AiImportScreen(
+    existingCategories: List<String>,
+    onBack: () -> Unit,
+    onImportParsed: (List<Pair<String, String?>>) -> Unit,
+) {
+    var text by rememberSaveable { mutableStateOf("") }
+    var isWorking by remember { mutableStateOf(false) }
+    var statusMessage by remember { mutableStateOf<String?>(null) }
+    var workJob by remember { mutableStateOf<Job?>(null) }
+    val trimmedText = text.trim()
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    fun cancelAndGoBack() {
+        workJob?.cancel()
+        workJob = null
+        isWorking = false
+        onBack()
+    }
+    BackHandler {
+        cancelAndGoBack()
+    }
+
+    Scaffold(
+        modifier = Modifier
+            .fillMaxSize()
+            .imePadding(),
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
+            TopAppBar(
+                title = { Text("AI Import Items") },
+                navigationIcon = {
+                    IconButton(onClick = { cancelAndGoBack() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                        )
+                    }
+                },
+            )
+        },
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp),
+        ) {
+            Text(
+                text = "Describe what you need in plain language:",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+            )
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it },
+                label = { Text("Items") },
+                placeholder = { Text("e.g. milk, eggs and bread for breakfast, plus dish soap") },
+                supportingText = {
+                    Text("Type or use your keyboard voice input. AI splits it into items and categories.")
+                },
+                enabled = !isWorking,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+            )
+            statusMessage?.let {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (isWorking) CircularProgressIndicator()
+                    Text(text = it, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FilledTonalButton(
+                    onClick = { cancelAndGoBack() },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(if (isWorking) "Cancel" else "Back")
+                }
+                FilledTonalButton(
+                    onClick = {
+                        workJob = scope.launch {
+                            isWorking = true
+                            statusMessage = "Checking AICore status…"
+                            try {
+                                val code = AiImportHelper.checkStatusCode()
+                                if (code == null) {
+                                    statusMessage = "Could not reach AICore. Check network and retry."
+                                    snackbarHostState.showSnackbar("AICore unreachable")
+                                    return@launch
+                                }
+                                statusMessage =
+                                    "AICore status: ${AiImportHelper.statusName(code)}. " +
+                                        "First download can take minutes on WiFi."
+                                val ready = AiImportHelper.ensureDownloaded(
+                                    onStarted = {
+                                        statusMessage =
+                                            "Download started, waiting for AICore… (status ${AiImportHelper.statusName(code)})"
+                                    },
+                                    onProgress = { downloaded ->
+                                        statusMessage =
+                                            "Downloading AI model… ${(downloaded / 1024)} KB"
+                                    },
+                                )
+                                if (!ready) {
+                                    statusMessage =
+                                        "AI model not ready (status ${AiImportHelper.statusName(code)}). " +
+                                            "Update AICore in Play Store, connect WiFi, wait, retry."
+                                    snackbarHostState.showSnackbar("AI unavailable on this device")
+                                    return@launch
+                                }
+                                statusMessage = "Parsing with on-device AI…"
+                                val parsed = AiImportHelper.parseWithAi(trimmedText, existingCategories)
+                                if (parsed.isEmpty()) {
+                                    statusMessage = null
+                                    snackbarHostState.showSnackbar("AI found no items")
+                                } else {
+                                    onImportParsed(parsed)
+                                    snackbarHostState.showSnackbar("Imported ${parsed.size} items")
+                                    workJob = null
+                                    onBack()
+                                }
+                            } catch (e: CancellationException) {
+                                statusMessage = "Cancelled."
+                            } catch (e: Exception) {
+                                statusMessage = "AI import failed: ${e.message}"
+                                snackbarHostState.showSnackbar("AI import failed")
+                            } finally {
+                                isWorking = false
+                                workJob = null
+                            }
+                        }
+                    },
+                    enabled = trimmedText.isNotEmpty() && !isWorking,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text("Import")
+                }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun AiImportScreenPreview() {
+    TodoListTheme {
+        AiImportScreen(
+            existingCategories = listOf("Dairy", "Bakery"),
+            onBack = {},
+            onImportParsed = {},
+        )
+    }
+}

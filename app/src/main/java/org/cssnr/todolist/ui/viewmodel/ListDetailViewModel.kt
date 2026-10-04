@@ -156,6 +156,11 @@ class ListDetailViewModel(
 
     fun importItems(text: String): Int {
         val parsed = parseItemsForImport(text)
+        importParsed(parsed)
+        return parsed.size
+    }
+
+    fun importParsed(parsed: List<Pair<String, String?>>) {
         viewModelScope.launch {
             val existingCategories = repository.listCategories(listId) +
                 parsed.mapNotNull { it.second }
@@ -169,7 +174,6 @@ class ListDetailViewModel(
                 repository.addItem(listId, itemText, resolvedCategory)
             }
         }
-        return parsed.size
     }
 
     companion object {
