@@ -40,7 +40,7 @@
 # TodoList Android
 
 <a title="TodoList Android" href="https://github.com/cssnr/todolist-android" target="_blank">
-<img alt="TodoList Android" align="right" width="128" height="auto" src="https://raw.githubusercontent.com/cssnr/todolist-android/refs/heads/master/.github/assets/icon.svg"></a>
+<img alt="TodoList Android" align="right" width="128" height="auto" src="https://raw.githubusercontent.com/cssnr/todolist-android/refs/heads/master/app/src/main/ic_launcher-playstore.png"></a>
 
 - [Install](#Install)
 - [Getting Started](#Getting-Started)
