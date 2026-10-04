@@ -1,6 +1,5 @@
 package org.cssnr.todolist.ui.screens
 
-import android.annotation.SuppressLint
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,9 +15,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
@@ -74,7 +71,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.style.TextOverflow
@@ -101,6 +97,11 @@ private const val UNCATEGORIZED = "Uncategorized"
 private const val NO_CATEGORY_KEY = "no-category"
 
 private val MIN_SHEET_CONTENT_HEIGHT = 200.dp
+
+// Tappable scrim strip kept below the status bar so the sheet can be dismissed
+// with a single tap outside. The status bar itself is system-consumed under
+// edge-to-edge and never reaches the scrim. 48.dp is the Material minimum touch target.
+private val SHEET_TOP_SCRIM_PEEK = 48.dp
 
 private sealed interface SuggestionRow {
     data class Exact(val text: String) : SuggestionRow
@@ -766,7 +767,6 @@ internal fun ConfirmActionDialog(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
 private fun EditItemSheet(
     item: TodoItemEntity,
@@ -780,33 +780,28 @@ private fun EditItemSheet(
     val trimmedText = textState.text.toString().trim()
     val trimmedCategory = categoryState.text.toString().trim()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val density = LocalDensity.current
-
-    // ModalBottomSheet shrinks its container by the IME, but only pads the top for the status bar
-    // and leaves the bottom to us, so cap the content to the space actually left on screen.
-    // Intentionally uses LocalConfiguration: we want the stable full-screen height minus the
-    // live IME/nav inset. LocalWindowInfo.containerSize inside the sheet's dialog window is
-    // the wrong signal here and breaks the cap when the keyboard shows.
-    val screenHeight = with(density) { LocalConfiguration.current.screenHeightDp.dp.toPx() }
-    val bottomInset = maxOf(
-        WindowInsets.ime.getBottom(density),
-        WindowInsets.navigationBars.getBottom(density),
-    )
-    val maxContentHeight = with(density) {
-        (screenHeight - statusBarHeight.toPx() - bottomInset)
-            .coerceAtLeast(MIN_SHEET_CONTENT_HEIGHT.toPx())
-            .toDp()
-    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(max = maxContentHeight),
+        // Cap content to the space the sheet actually has. ModalBottomSheet already
+        // applies bottom insets (including IME) via contentWindowInsets, so reading
+        // screen height / IME insets by hand here double-counts and goes stale by a
+        // frame. BoxWithConstraints tracks the real constraints, keyboard up or down.
+        // Keep the host status bar plus a tappable scrim peek above the sheet: under
+        // edge-to-edge the status bar strip alone is system-consumed and can't dismiss.
+        BoxWithConstraints(
+            modifier = Modifier.fillMaxWidth(),
         ) {
+            val maxContentHeight =
+                (maxHeight - statusBarHeight - SHEET_TOP_SCRIM_PEEK)
+                    .coerceAtLeast(MIN_SHEET_CONTENT_HEIGHT)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = maxContentHeight),
+            ) {
             Text(
                 text = "Edit item",
                 style = MaterialTheme.typography.headlineSmall,
@@ -866,6 +861,7 @@ private fun EditItemSheet(
                 ) {
                     Text("Save")
                 }
+            }
             }
         }
     }
