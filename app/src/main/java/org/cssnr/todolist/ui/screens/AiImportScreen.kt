@@ -23,6 +23,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,6 +32,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -72,6 +76,12 @@ fun AiImportScreen(
     val trimmedText = text.trim()
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+        keyboardController?.show()
+    }
     fun cancelAndGoBack() {
         workJob?.cancel()
         workJob = null
@@ -108,7 +118,7 @@ fun AiImportScreen(
                 .padding(horizontal = 16.dp),
         ) {
             Text(
-                text = "Describe what you need in plain language:",
+                text = "Describe your items in plan language:",
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -118,14 +128,15 @@ fun AiImportScreen(
                 value = text,
                 onValueChange = { text = it },
                 label = { Text("Items") },
-                placeholder = { Text("e.g. milk, eggs and bread for breakfast, plus dish soap") },
+                placeholder = { Text("Orange juice, eggs, bacon with flour tortillas and some salsa") },
                 supportingText = {
-                    Text("Type or use your keyboard voice input. AI splits it into items and categories.")
+                    Text("AI will automatically extract and categorize your items when you Import.")
                 },
                 enabled = !isWorking,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f),
+                    .weight(1f)
+                    .focusRequester(focusRequester),
             )
             statusMessage?.let {
                 Row(
