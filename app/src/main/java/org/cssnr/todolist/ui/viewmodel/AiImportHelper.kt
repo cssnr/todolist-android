@@ -55,12 +55,9 @@ object AiImportHelper {
             }
         } catch (e: CancellationException) {
             throw e
-        } catch (e: GenAiException) {
-            Log.w(TAG, "checkStatus failed: ${describeError(e)}", e)
-            throw e
         } catch (e: Exception) {
             Log.w(TAG, "checkStatus failed: ${describeError(e)}", e)
-            null
+            throw e
         }
     }
 
@@ -96,6 +93,7 @@ object AiImportHelper {
         initialStatus: Int? = null,
         onStarted: () -> Unit = {},
         onProgress: (downloaded: Long) -> Unit = {},
+        onFailed: (message: String) -> Unit = {},
     ): Boolean {
         return try {
             val model = Generation.getClient()
@@ -118,13 +116,21 @@ object AiImportHelper {
                                         dl is DownloadStatus.DownloadFailed
                             }
                         if (terminal is DownloadStatus.DownloadFailed) {
-                            Log.w(TAG, "download failed: ${describeError(terminal.e)}")
+                            val message =
+                                "Model download failed: ${describeError(terminal.e)}. " +
+                                    "Check your connection and retry."
+                            Log.w(TAG, message)
+                            onFailed(message)
                         }
                         terminal is DownloadStatus.DownloadCompleted
                     }
 
                     else -> {
-                        Log.w(TAG, "AICore status ${statusName(status)}, no model")
+                        val message =
+                            "AICore status ${statusName(status)} - no model available. " +
+                                "Check that Google AICore is installed and updated."
+                        Log.w(TAG, message)
+                        onFailed(message)
                         false
                     }
                 }
@@ -138,6 +144,7 @@ object AiImportHelper {
             throw e
         } catch (e: Exception) {
             Log.w(TAG, "ensureDownloaded failed: ${describeError(e)}", e)
+            onFailed("AICore error: ${describeError(e)}")
             false
         }
     }
@@ -152,7 +159,10 @@ object AiImportHelper {
             You parse a shopping/todo list from plain language into items with categories.
             Existing categories (reuse when matching, case-insensitive): $categories.
             You may invent a new short category only when nothing matches.
-            User text: "$input"
+            User text, delimited by <text> and </text>:
+            <text>
+            $input
+            </text>
             Return ONLY a JSON array, no markdown, no explanation.
             Each element: {"name": "<item name>", "category": "<category>" or null}.
             Rules: trim names, one item per element, drop empty items, max $MAX_ITEMS items.

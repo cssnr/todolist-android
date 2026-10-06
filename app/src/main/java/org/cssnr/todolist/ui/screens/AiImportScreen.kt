@@ -120,7 +120,7 @@ fun AiImportScreen(
                 .padding(horizontal = 16.dp),
         ) {
             Text(
-                text = "Describe your items in plan language:",
+                text = "Describe your items in plain language:",
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -172,28 +172,29 @@ fun AiImportScreen(
                             try {
                                 val code = AiImportHelper.checkStatusCode()
                                 if (code == null) {
-                                    statusMessage = "Could not reach AICore. Check network and retry."
-                                    notify("AICore unreachable")
+                                    statusMessage =
+                                        "AICore did not respond. Check that Google AICore is " +
+                                            "installed and updated, then retry."
+                                    notify("AICore unavailable")
                                     return@launch
                                 }
-                                statusMessage =
-                                    "AICore status: ${AiImportHelper.statusName(code)}. " +
-                                        "First download can take minutes on WiFi."
+                                statusMessage = "AICore status: ${AiImportHelper.statusName(code)}"
+                                var failure: String? = null
                                 val ready = AiImportHelper.ensureDownloaded(
                                     initialStatus = code,
                                     onStarted = {
                                         statusMessage =
-                                            "Download started, waiting for AICore… (status ${AiImportHelper.statusName(code)})"
+                                            "Downloading AI model (first download can take minutes)…"
                                     },
                                     onProgress = { downloaded ->
                                         statusMessage =
                                             "Downloading AI model… ${(downloaded / 1024)} KB"
                                     },
+                                    onFailed = { failure = it },
                                 )
                                 if (!ready) {
-                                    statusMessage =
-                                        "AI model not ready (status ${AiImportHelper.statusName(code)}). " +
-                                            "Update AICore in Play Store, connect WiFi, wait, retry."
+                                    statusMessage = failure
+                                        ?: "AICore status ${AiImportHelper.statusName(code)}, model not ready. Retry."
                                     notify("AI unavailable on this device")
                                     return@launch
                                 }

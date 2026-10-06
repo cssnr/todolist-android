@@ -8,6 +8,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.cssnr.todolist.data.CatalogDatabase
 import org.cssnr.todolist.data.CatalogRepository
 import org.cssnr.todolist.data.CatalogSuggestion
@@ -145,16 +147,18 @@ class ListDetailViewModel(
     }
 
     suspend fun importParsed(parsed: List<Pair<String, String?>>) {
-        val existingCategories = repository.listCategories(listId) +
+        withContext(NonCancellable) {
+            val existingCategories = repository.listCategories(listId) +
                 parsed.mapNotNull { it.second }
-        val categoryByName = existingCategories
-            .distinctBy { it.lowercase() }
-            .associateBy { it.lowercase() }
-        for ((itemText, category) in parsed) {
-            val resolvedCategory = category?.let {
-                categoryByName[it.lowercase()] ?: it
+            val categoryByName = existingCategories
+                .distinctBy { it.lowercase() }
+                .associateBy { it.lowercase() }
+            for ((itemText, category) in parsed) {
+                val resolvedCategory = category?.let {
+                    categoryByName[it.lowercase()] ?: it
+                }
+                repository.addItem(listId, itemText, resolvedCategory)
             }
-            repository.addItem(listId, itemText, resolvedCategory)
         }
     }
 
