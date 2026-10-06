@@ -1,5 +1,6 @@
 package org.cssnr.todolist.ui.screens
 
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,8 +19,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -34,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -58,7 +58,7 @@ fun AiImportRoute(
     AiImportScreen(
         existingCategories = categories,
         onBack = onBack,
-        onImportParsed = viewModel::importParsed,
+        onImportParsed = { viewModel.importParsed(it) },
     )
 }
 
@@ -67,7 +67,7 @@ fun AiImportRoute(
 fun AiImportScreen(
     existingCategories: List<String>,
     onBack: () -> Unit,
-    onImportParsed: (List<Pair<String, String?>>) -> Unit,
+    onImportParsed: suspend (List<Pair<String, String?>>) -> Unit,
 ) {
     var text by rememberSaveable { mutableStateOf("") }
     var isWorking by remember { mutableStateOf(false) }
@@ -75,9 +75,12 @@ fun AiImportScreen(
     var workJob by remember { mutableStateOf<Job?>(null) }
     val trimmedText = text.trim()
     val scope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
+    fun notify(message: String) {
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+    }
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
         keyboardController?.show()
@@ -96,7 +99,6 @@ fun AiImportScreen(
         modifier = Modifier
             .fillMaxSize()
             .imePadding(),
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("AI Import Items") },
@@ -171,13 +173,14 @@ fun AiImportScreen(
                                 val code = AiImportHelper.checkStatusCode()
                                 if (code == null) {
                                     statusMessage = "Could not reach AICore. Check network and retry."
-                                    snackbarHostState.showSnackbar("AICore unreachable")
+                                    notify("AICore unreachable")
                                     return@launch
                                 }
                                 statusMessage =
                                     "AICore status: ${AiImportHelper.statusName(code)}. " +
                                         "First download can take minutes on WiFi."
                                 val ready = AiImportHelper.ensureDownloaded(
+                                    initialStatus = code,
                                     onStarted = {
                                         statusMessage =
                                             "Download started, waiting for AICore… (status ${AiImportHelper.statusName(code)})"
@@ -191,25 +194,25 @@ fun AiImportScreen(
                                     statusMessage =
                                         "AI model not ready (status ${AiImportHelper.statusName(code)}). " +
                                             "Update AICore in Play Store, connect WiFi, wait, retry."
-                                    snackbarHostState.showSnackbar("AI unavailable on this device")
+                                    notify("AI unavailable on this device")
                                     return@launch
                                 }
                                 statusMessage = "Parsing with on-device AI…"
                                 val parsed = AiImportHelper.parseWithAi(trimmedText, existingCategories)
                                 if (parsed.isEmpty()) {
                                     statusMessage = null
-                                    snackbarHostState.showSnackbar("AI found no items")
+                                    notify("AI found no items")
                                 } else {
                                     onImportParsed(parsed)
-                                    snackbarHostState.showSnackbar("Imported ${parsed.size} items")
+                                    notify("Imported ${parsed.size} items")
                                     workJob = null
                                     onBack()
                                 }
-                            } catch (e: CancellationException) {
+                            } catch (_: CancellationException) {
                                 statusMessage = "Cancelled."
                             } catch (e: Exception) {
-                                statusMessage = "AI import failed: ${e.message}"
-                                snackbarHostState.showSnackbar("AI import failed")
+                                statusMessage = "AI import failed: ${AiImportHelper.describeError(e)}"
+                                notify("AI import failed")
                             } finally {
                                 isWorking = false
                                 workJob = null

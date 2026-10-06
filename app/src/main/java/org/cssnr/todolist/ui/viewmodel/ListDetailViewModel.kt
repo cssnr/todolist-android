@@ -83,10 +83,10 @@ class ListDetailViewModel(
             .sortedWith(Comparator { a, b -> a.compareTo(b, ignoreCase = true) })
     }.distinctUntilChanged()
         .stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = emptyList(),
-    )
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList(),
+        )
 
     val showSearchCategories: StateFlow<Boolean> = settingsRepository.showSearchCategories
         .stateIn(
@@ -103,9 +103,7 @@ class ListDetailViewModel(
         )
 
     init {
-        viewModelScope.launch {
-            catalogRepository.ensureSeeded()
-        }
+        viewModelScope.launch { catalogRepository.ensureSeeded() }
     }
 
     fun setQuery(value: String) {
@@ -113,66 +111,50 @@ class ListDetailViewModel(
     }
 
     fun addItem(text: String, category: String? = null) {
-        viewModelScope.launch {
-            repository.addItem(listId, text, category)
-        }
+        viewModelScope.launch { repository.addItem(listId, text, category) }
     }
 
     fun toggleItem(item: TodoItemEntity) {
-        viewModelScope.launch {
-            repository.toggleItem(item)
-        }
+        viewModelScope.launch { repository.toggleItem(item) }
     }
 
     fun updateItem(item: TodoItemEntity, newText: String, newCategory: String?) {
-        viewModelScope.launch {
-            repository.updateItem(item, newText, newCategory)
-        }
+        viewModelScope.launch { repository.updateItem(item, newText, newCategory) }
     }
 
     fun deleteItem(item: TodoItemEntity) {
-        viewModelScope.launch {
-            repository.deleteItem(item)
-        }
+        viewModelScope.launch { repository.deleteItem(item) }
     }
 
     fun setHideCompleted(hideCompleted: Boolean) {
-        viewModelScope.launch {
-            repository.setHideCompleted(listId, hideCompleted)
-        }
+        viewModelScope.launch { repository.setHideCompleted(listId, hideCompleted) }
     }
 
     fun crossAllItems() {
-        viewModelScope.launch {
-            repository.crossAllItems(listId)
-        }
+        viewModelScope.launch { repository.crossAllItems(listId) }
     }
 
     fun uncrossAllItems() {
-        viewModelScope.launch {
-            repository.uncrossAllItems(listId)
-        }
+        viewModelScope.launch { repository.uncrossAllItems(listId) }
     }
 
     fun importItems(text: String): Int {
         val parsed = parseItemsForImport(text)
-        importParsed(parsed)
+        viewModelScope.launch { importParsed(parsed) }
         return parsed.size
     }
 
-    fun importParsed(parsed: List<Pair<String, String?>>) {
-        viewModelScope.launch {
-            val existingCategories = repository.listCategories(listId) +
+    suspend fun importParsed(parsed: List<Pair<String, String?>>) {
+        val existingCategories = repository.listCategories(listId) +
                 parsed.mapNotNull { it.second }
-            val categoryByName = existingCategories
-                .distinctBy { it.lowercase() }
-                .associateBy { it.lowercase() }
-            for ((itemText, category) in parsed) {
-                val resolvedCategory = category?.let {
-                    categoryByName[it.lowercase()] ?: it
-                }
-                repository.addItem(listId, itemText, resolvedCategory)
+        val categoryByName = existingCategories
+            .distinctBy { it.lowercase() }
+            .associateBy { it.lowercase() }
+        for ((itemText, category) in parsed) {
+            val resolvedCategory = category?.let {
+                categoryByName[it.lowercase()] ?: it
             }
+            repository.addItem(listId, itemText, resolvedCategory)
         }
     }
 

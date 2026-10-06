@@ -73,6 +73,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -86,6 +87,7 @@ import de.charlex.compose.rememberRevealState
 import de.charlex.compose.reset
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import org.cssnr.todolist.R
 import org.cssnr.todolist.data.CatalogSuggestion
 import org.cssnr.todolist.data.TodoItemEntity
 import org.cssnr.todolist.data.TodoListEntity
@@ -460,9 +462,7 @@ fun ListDetailScreen(
                 if (isAiAvailable) {
                     IconButton(onClick = onOpenAiImport) {
                         Icon(
-                            painter = androidx.compose.ui.res.painterResource(
-                                org.cssnr.todolist.R.drawable.md_text_to_speech_24px,
-                            ),
+                            painter = painterResource(R.drawable.md_text_to_speech_24px),
                             contentDescription = "AI import items",
                         )
                     }

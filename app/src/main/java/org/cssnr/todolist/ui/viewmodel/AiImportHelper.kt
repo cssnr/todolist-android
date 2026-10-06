@@ -1,7 +1,9 @@
 package org.cssnr.todolist.ui.viewmodel
 
+import android.util.Log
 import com.google.mlkit.genai.common.DownloadStatus
 import com.google.mlkit.genai.common.FeatureStatus
+import com.google.mlkit.genai.common.GenAiException
 import com.google.mlkit.genai.prompt.Generation
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
@@ -20,7 +22,9 @@ data class AiParsedItem(
 object AiImportHelper {
 
     private const val TAG = "AiImport"
+    private const val MAX_ITEMS = 100
     private val json = Json { ignoreUnknownKeys = true }
+    private var cachedAvailable: Boolean = false
 
     fun statusName(status: Int): String = when (status) {
         FeatureStatus.AVAILABLE -> "AVAILABLE"
@@ -28,6 +32,12 @@ object AiImportHelper {
         FeatureStatus.DOWNLOADING -> "DOWNLOADING"
         FeatureStatus.UNAVAILABLE -> "UNAVAILABLE"
         else -> "UNKNOWN($status)"
+    }
+
+    fun describeError(e: Throwable): String {
+        val message = e.message?.takeIf { it.isNotBlank() } ?: e::class.java.simpleName
+        val code = (e as? GenAiException)?.errorCode ?: return message
+        return "$message [AICore error $code]"
     }
 
     suspend fun checkStatusCode(): Int? {
@@ -45,20 +55,28 @@ object AiImportHelper {
             }
         } catch (e: CancellationException) {
             throw e
+        } catch (e: GenAiException) {
+            Log.w(TAG, "checkStatus failed: ${describeError(e)}", e)
+            throw e
         } catch (e: Exception) {
-            android.util.Log.w(TAG, "checkStatus failed", e)
+            Log.w(TAG, "checkStatus failed: ${describeError(e)}", e)
             null
         }
     }
 
     suspend fun isAvailable(): Boolean {
+        if (cachedAvailable) return true
         return try {
             withTimeoutOrNull(15_000.milliseconds) {
                 val model = Generation.getClient()
                 try {
                     val status = model.checkStatus()
-                    android.util.Log.d(TAG, "isAvailable checkStatus=${statusName(status)}")
-                    status != FeatureStatus.UNAVAILABLE
+                    Log.d(TAG, "isAvailable checkStatus=${statusName(status)}")
+                    val available = status != FeatureStatus.UNAVAILABLE
+                    if (available) {
+                        cachedAvailable = true
+                    }
+                    available
                 } finally {
                     try {
                         model.close()
@@ -69,58 +87,57 @@ object AiImportHelper {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            android.util.Log.w(TAG, "isAvailable failed", e)
+            Log.w(TAG, "isAvailable failed: ${describeError(e)}", e)
             false
         }
     }
 
     suspend fun ensureDownloaded(
+        initialStatus: Int? = null,
         onStarted: () -> Unit = {},
         onProgress: (downloaded: Long) -> Unit = {},
     ): Boolean {
         return try {
-            withTimeoutOrNull(120_000.milliseconds) {
-                val model = Generation.getClient()
-                try {
-                    val status = model.checkStatus()
-                    android.util.Log.d(TAG, "checkStatus=${statusName(status)}")
-                    when (status) {
-                        FeatureStatus.AVAILABLE -> true
-                        FeatureStatus.DOWNLOADABLE, FeatureStatus.DOWNLOADING -> {
-                            onStarted()
-                            val terminal = model.download()
-                                .onEach { dl ->
-                                    android.util.Log.d(TAG, "download event=$dl")
-                                    if (dl is DownloadStatus.DownloadProgress) {
-                                        onProgress(dl.totalBytesDownloaded)
-                                    }
+            val model = Generation.getClient()
+            try {
+                val status = initialStatus ?: model.checkStatus()
+                Log.d(TAG, "checkStatus=${statusName(status)}")
+                when (status) {
+                    FeatureStatus.AVAILABLE -> true
+                    FeatureStatus.DOWNLOADABLE, FeatureStatus.DOWNLOADING -> {
+                        onStarted()
+                        val terminal = model.download()
+                            .onEach { dl ->
+                                Log.d(TAG, "download event=$dl")
+                                if (dl is DownloadStatus.DownloadProgress) {
+                                    onProgress(dl.totalBytesDownloaded)
                                 }
-                                .first { dl ->
-                                    dl is DownloadStatus.DownloadCompleted ||
-                                            dl is DownloadStatus.DownloadFailed
-                                }
-                            if (terminal is DownloadStatus.DownloadFailed) {
-                                android.util.Log.w(TAG, "download failed: $terminal")
                             }
-                            terminal is DownloadStatus.DownloadCompleted
+                            .first { dl ->
+                                dl is DownloadStatus.DownloadCompleted ||
+                                        dl is DownloadStatus.DownloadFailed
+                            }
+                        if (terminal is DownloadStatus.DownloadFailed) {
+                            Log.w(TAG, "download failed: ${describeError(terminal.e)}")
                         }
-
-                        else -> {
-                            android.util.Log.w(TAG, "AICore status ${statusName(status)}, no model")
-                            false
-                        }
+                        terminal is DownloadStatus.DownloadCompleted
                     }
-                } finally {
-                    try {
-                        model.close()
-                    } catch (_: Exception) {
+
+                    else -> {
+                        Log.w(TAG, "AICore status ${statusName(status)}, no model")
+                        false
                     }
                 }
-            } ?: false
+            } finally {
+                try {
+                    model.close()
+                } catch (_: Exception) {
+                }
+            }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            android.util.Log.w(TAG, "ensureDownloaded failed", e)
+            Log.w(TAG, "ensureDownloaded failed: ${describeError(e)}", e)
             false
         }
     }
@@ -138,7 +155,7 @@ object AiImportHelper {
             User text: "$input"
             Return ONLY a JSON array, no markdown, no explanation.
             Each element: {"name": "<item name>", "category": "<category>" or null}.
-            Rules: trim names, one item per element, drop empty items, max 100 items.
+            Rules: trim names, one item per element, drop empty items, max $MAX_ITEMS items.
             Format each item name and any new category in Title Case (e.g. Green Peppers, Dish Soap).
             Reuse existing categories with their exact spelling.
         """.trimIndent()
@@ -148,13 +165,13 @@ object AiImportHelper {
         input: String,
         existingCategories: List<String>
     ): List<Pair<String, String?>> {
-        val result = withTimeoutOrNull(120_000.milliseconds) {
+        val result = run {
             val model = Generation.getClient()
             try {
-                android.util.Log.d(TAG, "generateContent started, inputChars=${input.length}")
+                Log.d(TAG, "generateContent started, inputChars=${input.length}")
                 val response = model.generateContent(buildPrompt(input, existingCategories))
                 val text = response.candidates.firstOrNull()?.text.orEmpty()
-                android.util.Log.d(TAG, "generateContent done, outputChars=${text.length}")
+                Log.d(TAG, "generateContent done, outputChars=${text.length}")
                 decodeItems(text)
             } finally {
                 try {
@@ -162,14 +179,18 @@ object AiImportHelper {
                 } catch (_: Exception) {
                 }
             }
-        } ?: throw IllegalStateException("AI timed out")
+        }
         return result.map { it.name.trim() to it.category?.trim()?.takeIf { c -> c.isNotEmpty() } }
             .filter { it.first.isNotEmpty() }
     }
 
     fun decodeItems(raw: String): List<AiParsedItem> {
-        val cleaned = raw.trim()
-            .removePrefix("```json").removePrefix("```").removeSuffix("```").trim()
-        return json.decodeFromString(cleaned)
+        val start = raw.indexOf('[')
+        val end = raw.lastIndexOf(']')
+        if (start !in 0..end) {
+            throw IllegalStateException("No JSON array found in AI response")
+        }
+        val items = json.decodeFromString<List<AiParsedItem>>(raw.substring(start, end + 1))
+        return items.take(MAX_ITEMS)
     }
 }
