@@ -1,7 +1,6 @@
 package org.cssnr.todolist.ui.screens
 
 import android.content.Intent
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -59,6 +58,7 @@ import org.cssnr.todolist.data.SettingsRepository
 import org.cssnr.todolist.ui.components.SettingsGroup
 import org.cssnr.todolist.ui.components.SettingsTile
 import org.cssnr.todolist.ui.theme.TodoListTheme
+import org.cssnr.todolist.ui.theme.dynamicColorSupported
 import org.cssnr.todolist.ui.theme.seedColorForHue
 import org.cssnr.todolist.ui.viewmodel.SettingsState
 import org.cssnr.todolist.ui.viewmodel.SettingsViewModel
@@ -144,35 +144,43 @@ fun SettingsScreen(
             )
             SettingsGroup(
                 title = stringResource(R.string.settings_group_appearance),
-                tiles = listOf(
-                    SettingsTile.Toggle(
-                        icon = rememberVectorPainter(Icons.Filled.Palette),
-                        title = stringResource(R.string.settings_dynamic_color),
-                        summary = stringResource(
-                            if (DYNAMIC_SUPPORTED) {
-                                R.string.settings_dynamic_color_summary
-                            } else {
-                                R.string.settings_dynamic_color_unavailable
+                // Below Android 12 the dynamic theme has no system palette to read, so the
+                // switch has no honest state to show and the tile is dropped entirely rather
+                // than left permanently dead. The seed picker then becomes the whole group.
+                tiles = buildList {
+                    if (dynamicColorSupported) {
+                        add(
+                            SettingsTile.Toggle(
+                                icon = rememberVectorPainter(Icons.Filled.Palette),
+                                title = stringResource(R.string.settings_dynamic_color),
+                                summary = stringResource(R.string.settings_dynamic_color_summary),
+                                checked = settings.dynamicColor,
+                                onCheckedChange = onDynamicChange,
+                            ),
+                        )
+                    }
+                    add(
+                        SettingsTile.Custom(
+                            icon = rememberVectorPainter(Icons.Filled.Palette),
+                            title = stringResource(R.string.settings_seed_color),
+                            summary = stringResource(
+                                if (dynamicColorSupported) {
+                                    R.string.settings_seed_color_summary
+                                } else {
+                                    R.string.settings_seed_color_summary_always
+                                },
+                            ),
+                            enabled = !settings.dynamicColor || !dynamicColorSupported,
+                            content = {
+                                SeedColorPicker(
+                                    seedHue = settings.seedHue,
+                                    enabled = !settings.dynamicColor || !dynamicColorSupported,
+                                    onSeedHueChange = onSeedHueChange,
+                                )
                             },
                         ),
-                        checked = settings.dynamicColor && DYNAMIC_SUPPORTED,
-                        enabled = DYNAMIC_SUPPORTED,
-                        onCheckedChange = onDynamicChange,
-                    ),
-                    SettingsTile.Custom(
-                        icon = rememberVectorPainter(Icons.Filled.Palette),
-                        title = stringResource(R.string.settings_seed_color),
-                        summary = stringResource(R.string.settings_seed_color_summary),
-                        enabled = !settings.dynamicColor || !DYNAMIC_SUPPORTED,
-                        content = {
-                            SeedColorPicker(
-                                seedHue = settings.seedHue,
-                                enabled = !settings.dynamicColor || !DYNAMIC_SUPPORTED,
-                                onSeedHueChange = onSeedHueChange,
-                            )
-                        },
-                    ),
-                ),
+                    )
+                },
             )
             SettingsGroup(
                 title = stringResource(R.string.settings_group_debug),
@@ -244,8 +252,6 @@ private val CONTENT_BOTTOM_PADDING = 16.dp
 private val PICKER_SWATCH_SIZE = 36.dp
 private val PICKER_ROW_GAP = 6.dp
 private val PICKER_TRACK_HEIGHT = 40.dp
-
-private val DYNAMIC_SUPPORTED = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
 /**
  * Rainbow hue picker: one M3 Slider over a hue gradient track plus a preview swatch.
