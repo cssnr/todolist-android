@@ -34,6 +34,7 @@ import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.delay
 import org.cssnr.todolist.ui.navigation.About
 import org.cssnr.todolist.ui.navigation.ListDetail
+import org.cssnr.todolist.ui.navigation.ListAiImport
 import org.cssnr.todolist.ui.navigation.ListExport
 import org.cssnr.todolist.ui.navigation.ListImport
 import org.cssnr.todolist.ui.navigation.TodoListNavHost
@@ -57,6 +58,7 @@ fun TodoListApp() {
         topLevelDestinations.firstOrNull { it.isCurrent(currentDestination) }
 
     val isFullPageTool = currentDestination?.hasRoute<ListImport>() == true ||
+        currentDestination?.hasRoute<ListAiImport>() == true ||
         currentDestination?.hasRoute<ListExport>() == true ||
         currentDestination?.hasRoute<About>() == true
 

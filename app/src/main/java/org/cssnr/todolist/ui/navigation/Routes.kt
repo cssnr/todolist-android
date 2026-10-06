@@ -21,4 +21,7 @@ data class ListDetail(val listId: Long)
 data class ListImport(val listId: Long)
 
 @Serializable
+data class ListAiImport(val listId: Long)
+
+@Serializable
 data class ListExport(val listId: Long)

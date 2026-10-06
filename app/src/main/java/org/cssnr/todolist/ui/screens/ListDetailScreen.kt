@@ -73,6 +73,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -86,10 +87,12 @@ import de.charlex.compose.rememberRevealState
 import de.charlex.compose.reset
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import org.cssnr.todolist.R
 import org.cssnr.todolist.data.CatalogSuggestion
 import org.cssnr.todolist.data.TodoItemEntity
 import org.cssnr.todolist.data.TodoListEntity
 import org.cssnr.todolist.ui.theme.TodoListTheme
+import org.cssnr.todolist.ui.viewmodel.AiImportHelper
 import org.cssnr.todolist.ui.viewmodel.ListDetailViewModel
 
 private const val UNCATEGORIZED = "Uncategorized"
@@ -183,6 +186,7 @@ fun ListDetailRoute(
     onBack: () -> Unit,
     onOpenImport: () -> Unit,
     onOpenExport: () -> Unit,
+    onOpenAiImport: () -> Unit,
     onLoaded: () -> Unit = {},
     viewModel: ListDetailViewModel = viewModel(
         factory = ListDetailViewModel.factory(listId),
@@ -195,6 +199,11 @@ fun ListDetailRoute(
     val suggestions by viewModel.suggestions.collectAsStateWithLifecycle()
     val showSearchCategories by viewModel.showSearchCategories.collectAsStateWithLifecycle()
     val fullWidthStrikethrough by viewModel.fullWidthStrikethrough.collectAsStateWithLifecycle()
+    var isAiAvailable by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        isAiAvailable = AiImportHelper.isAvailable()
+    }
 
     LaunchedEffect(list) {
         if (list != null) onLoaded()
@@ -208,11 +217,13 @@ fun ListDetailRoute(
         suggestions = suggestions,
         showSearchCategories = showSearchCategories,
         fullWidthStrikethrough = fullWidthStrikethrough,
+        isAiAvailable = isAiAvailable,
         onBack = onBack,
         onQueryChange = viewModel::setQuery,
         onAddItem = viewModel::addItem,
         onOpenImport = onOpenImport,
         onOpenExport = onOpenExport,
+        onOpenAiImport = onOpenAiImport,
         onToggleItem = viewModel::toggleItem,
         onUpdateItem = viewModel::updateItem,
         onDeleteItem = viewModel::deleteItem,
@@ -232,11 +243,13 @@ fun ListDetailScreen(
     suggestions: List<CatalogSuggestion>,
     showSearchCategories: Boolean,
     fullWidthStrikethrough: Boolean,
+    isAiAvailable: Boolean,
     onBack: () -> Unit,
     onQueryChange: (String) -> Unit,
     onAddItem: (text: String, category: String?) -> Unit,
     onOpenImport: () -> Unit,
     onOpenExport: () -> Unit,
+    onOpenAiImport: () -> Unit,
     onToggleItem: (TodoItemEntity) -> Unit,
     onUpdateItem: (TodoItemEntity, String, String?) -> Unit,
     onDeleteItem: (TodoItemEntity) -> Unit,
@@ -397,50 +410,63 @@ fun ListDetailScreen(
                 .fillMaxSize()
                 .padding(innerPadding),
         ) {
-            SearchBar(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                windowInsets = WindowInsets(0),
-                inputField = {
-                    SearchBarDefaults.InputField(
-                        query = query,
-                        onQueryChange = { newQuery ->
-                            onQueryChange(newQuery)
-                            if (newQuery.isNotBlank()) {
-                                expanded = true
-                            }
-                        },
-                        onSearch = {
-                            if (query.isNotBlank()) {
-                                onAddItem(query.trim(), null)
-                                onQueryChange("")
-                                expanded = false
-                                keyboardController?.hide()
-                            }
-                        },
-                        expanded = expanded,
-                        onExpandedChange = { expanded = it && query.isNotBlank() },
-                        placeholder = { Text("Search to add an item") },
-                        trailingIcon = {
-                            if (expanded) {
-                                IconButton(onClick = {
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                SearchBar(
+                    modifier = Modifier.weight(1f),
+                    windowInsets = WindowInsets(0),
+                    inputField = {
+                        SearchBarDefaults.InputField(
+                            query = query,
+                            onQueryChange = { newQuery ->
+                                onQueryChange(newQuery)
+                                if (newQuery.isNotBlank()) {
+                                    expanded = true
+                                }
+                            },
+                            onSearch = {
+                                if (query.isNotBlank()) {
+                                    onAddItem(query.trim(), null)
                                     onQueryChange("")
                                     expanded = false
                                     keyboardController?.hide()
-                                }) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Close,
-                                        contentDescription = "Close search",
-                                    )
                                 }
-                            }
-                        },
-                    )
-                },
-                expanded = false,
-                onExpandedChange = { expanded = it && query.isNotBlank() },
-            ) {
+                            },
+                            expanded = expanded,
+                            onExpandedChange = { expanded = it && query.isNotBlank() },
+                            placeholder = { Text("Search to add an item") },
+                            trailingIcon = {
+                                if (expanded) {
+                                    IconButton(onClick = {
+                                        onQueryChange("")
+                                        expanded = false
+                                        keyboardController?.hide()
+                                    }) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Close,
+                                            contentDescription = "Close search",
+                                        )
+                                    }
+                                }
+                            },
+                        )
+                    },
+                    expanded = false,
+                    onExpandedChange = { expanded = it && query.isNotBlank() },
+                ) {
+                }
+                if (isAiAvailable) {
+                    IconButton(onClick = onOpenAiImport) {
+                        Icon(
+                            painter = painterResource(R.drawable.md_text_to_speech_24px),
+                            contentDescription = "AI import items",
+                        )
+                    }
+                }
             }
 
             Box(
@@ -913,11 +939,13 @@ fun ListDetailScreenPreview() {
             suggestions = emptyList(),
             showSearchCategories = true,
             fullWidthStrikethrough = false,
+            isAiAvailable = true,
             onBack = {},
             onQueryChange = {},
             onAddItem = { _, _ -> },
             onOpenImport = {},
             onOpenExport = {},
+            onOpenAiImport = {},
             onToggleItem = {},
             onUpdateItem = { _, _, _ -> },
             onDeleteItem = {},
@@ -963,11 +991,13 @@ fun ListDetailScreenItemsPreview() {
             suggestions = emptyList(),
             showSearchCategories = true,
             fullWidthStrikethrough = false,
+            isAiAvailable = false,
             onBack = {},
             onQueryChange = {},
             onAddItem = { _, _ -> },
             onOpenImport = {},
             onOpenExport = {},
+            onOpenAiImport = {},
             onToggleItem = {},
             onUpdateItem = { _, _, _ -> },
             onDeleteItem = {},
