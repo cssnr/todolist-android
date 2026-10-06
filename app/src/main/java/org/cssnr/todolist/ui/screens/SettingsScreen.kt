@@ -144,35 +144,43 @@ fun SettingsScreen(
             )
             SettingsGroup(
                 title = stringResource(R.string.settings_group_appearance),
-                tiles = listOf(
-                    SettingsTile.Toggle(
-                        icon = rememberVectorPainter(Icons.Filled.Palette),
-                        title = stringResource(R.string.settings_dynamic_color),
-                        summary = stringResource(
-                            if (dynamicColorSupported) {
-                                R.string.settings_dynamic_color_summary
-                            } else {
-                                R.string.settings_dynamic_color_unavailable
+                // Below Android 12 the dynamic theme has no system palette to read, so the
+                // switch has no honest state to show and the tile is dropped entirely rather
+                // than left permanently dead. The seed picker then becomes the whole group.
+                tiles = buildList {
+                    if (dynamicColorSupported) {
+                        add(
+                            SettingsTile.Toggle(
+                                icon = rememberVectorPainter(Icons.Filled.Palette),
+                                title = stringResource(R.string.settings_dynamic_color),
+                                summary = stringResource(R.string.settings_dynamic_color_summary),
+                                checked = settings.dynamicColor,
+                                onCheckedChange = onDynamicChange,
+                            ),
+                        )
+                    }
+                    add(
+                        SettingsTile.Custom(
+                            icon = rememberVectorPainter(Icons.Filled.Palette),
+                            title = stringResource(R.string.settings_seed_color),
+                            summary = stringResource(
+                                if (dynamicColorSupported) {
+                                    R.string.settings_seed_color_summary
+                                } else {
+                                    R.string.settings_seed_color_summary_always
+                                },
+                            ),
+                            enabled = !settings.dynamicColor || !dynamicColorSupported,
+                            content = {
+                                SeedColorPicker(
+                                    seedHue = settings.seedHue,
+                                    enabled = !settings.dynamicColor || !dynamicColorSupported,
+                                    onSeedHueChange = onSeedHueChange,
+                                )
                             },
                         ),
-                        checked = settings.dynamicColor && dynamicColorSupported,
-                        enabled = dynamicColorSupported,
-                        onCheckedChange = onDynamicChange,
-                    ),
-                    SettingsTile.Custom(
-                        icon = rememberVectorPainter(Icons.Filled.Palette),
-                        title = stringResource(R.string.settings_seed_color),
-                        summary = stringResource(R.string.settings_seed_color_summary),
-                        enabled = !settings.dynamicColor || !dynamicColorSupported,
-                        content = {
-                            SeedColorPicker(
-                                seedHue = settings.seedHue,
-                                enabled = !settings.dynamicColor || !dynamicColorSupported,
-                                onSeedHueChange = onSeedHueChange,
-                            )
-                        },
-                    ),
-                ),
+                    )
+                },
             )
             SettingsGroup(
                 title = stringResource(R.string.settings_group_debug),

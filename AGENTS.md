@@ -19,7 +19,7 @@ ALWAYS use the `task *` commands
 
 | Command        | Purpose                                  |
 | -------------- | ---------------------------------------- |
-| `task lint`    | Gradle Lint - DO NOT RUN                 |
+| `task lint`    | Gradle Lint - MUST READ report, NOT exit |
 | `task compile` | Compile Kotlin - DO NOT truncate output  |
 | `task debug`   | Build debug variant (APK)                |
 | `task release` | Build release variant (APK)              |
@@ -28,6 +28,27 @@ ALWAYS use the `task *` commands
 | `task format`  | Prettier write (format non-kotlin files) |
 
 Do NOT run task lint/compile/debug/release/bundle every turn unless it is REQUIRED!!!
+
+### Lint
+
+`task lint` exits 0 on warnings. `abortOnError` only fails the build on errors, so a green
+exit does NOT mean the code is clean. READ THE REPORT:
+
+    task lint -- --rerun-tasks
+
+Without `--rerun-tasks` Gradle marks `lintReportDebug` up-to-date and leaves a stale report
+behind, so a "passing" run may be reporting on older source than what is on disk. Even when
+analysis output is unchanged the report file may not be rewritten, so an old timestamp is not
+proof analysis was skipped either.
+
+Reports (written fresh each run):
+
+- `app/build/reports/lint-results-debug.sarif` - machine readable, parse this
+- `app/build/reports/lint-results-debug.html`
+
+Confirm the report timestamp is newer than the sources before trusting it. Prove a check is
+actually live before trusting a zero count: add a deliberate violation of that rule, confirm
+lint reports it, then remove it. `NewApi` is error-severity and fails the build.
 
 ## Testing
 
