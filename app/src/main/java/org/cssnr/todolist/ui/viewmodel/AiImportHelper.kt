@@ -118,7 +118,7 @@ object AiImportHelper {
                         if (terminal is DownloadStatus.DownloadFailed) {
                             val message =
                                 "Model download failed: ${describeError(terminal.e)}. " +
-                                    "Check your connection and retry."
+                                        "Check your connection and retry."
                             Log.w(TAG, message)
                             onFailed(message)
                         }
@@ -128,7 +128,7 @@ object AiImportHelper {
                     else -> {
                         val message =
                             "AICore status ${statusName(status)} - no model available. " +
-                                "Check that Google AICore is installed and updated."
+                                    "Check that Google AICore is installed and updated."
                         Log.w(TAG, message)
                         onFailed(message)
                         false

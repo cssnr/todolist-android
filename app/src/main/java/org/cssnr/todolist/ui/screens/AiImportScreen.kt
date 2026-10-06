@@ -174,7 +174,7 @@ fun AiImportScreen(
                                 if (code == null) {
                                     statusMessage =
                                         "AICore did not respond. Check that Google AICore is " +
-                                            "installed and updated, then retry."
+                                                "installed and updated, then retry."
                                     notify("AICore unavailable")
                                     return@launch
                                 }
@@ -199,7 +199,8 @@ fun AiImportScreen(
                                     return@launch
                                 }
                                 statusMessage = "Parsing with on-device AI…"
-                                val parsed = AiImportHelper.parseWithAi(trimmedText, existingCategories)
+                                val parsed =
+                                    AiImportHelper.parseWithAi(trimmedText, existingCategories)
                                 if (parsed.isEmpty()) {
                                     statusMessage = null
                                     notify("AI found no items")
@@ -212,7 +213,8 @@ fun AiImportScreen(
                             } catch (_: CancellationException) {
                                 statusMessage = "Cancelled."
                             } catch (e: Exception) {
-                                statusMessage = "AI import failed: ${AiImportHelper.describeError(e)}"
+                                statusMessage =
+                                    "AI import failed: ${AiImportHelper.describeError(e)}"
                                 notify("AI import failed")
                             } finally {
                                 isWorking = false
