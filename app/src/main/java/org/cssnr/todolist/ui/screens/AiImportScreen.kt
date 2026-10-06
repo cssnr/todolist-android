@@ -1,6 +1,5 @@
 package org.cssnr.todolist.ui.screens
 
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -26,24 +25,18 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 import org.cssnr.todolist.ui.theme.TodoListTheme
-import org.cssnr.todolist.ui.viewmodel.AiImportHelper
 import org.cssnr.todolist.ui.viewmodel.ListDetailViewModel
 
 @Composable
@@ -54,41 +47,40 @@ fun AiImportRoute(
         factory = ListDetailViewModel.factory(listId),
     ),
 ) {
-    val categories by viewModel.categories.collectAsStateWithLifecycle()
+    val status by viewModel.aiStatus.collectAsStateWithLifecycle()
+    val isWorking by viewModel.aiWorking.collectAsStateWithLifecycle()
+    val importDone by viewModel.aiImportDone.collectAsStateWithLifecycle()
+    LaunchedEffect(importDone) {
+        if (importDone) onBack()
+    }
     AiImportScreen(
-        existingCategories = categories,
+        status = status,
+        isWorking = isWorking,
         onBack = onBack,
-        onImportParsed = { viewModel.importParsed(it) },
+        onCancel = { viewModel.cancelAiImport() },
+        onImport = { viewModel.startAiImport(it) },
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AiImportScreen(
-    existingCategories: List<String>,
+    status: String?,
+    isWorking: Boolean,
     onBack: () -> Unit,
-    onImportParsed: suspend (List<Pair<String, String?>>) -> Unit,
+    onCancel: () -> Unit,
+    onImport: (String) -> Unit,
 ) {
     var text by rememberSaveable { mutableStateOf("") }
-    var isWorking by remember { mutableStateOf(false) }
-    var statusMessage by remember { mutableStateOf<String?>(null) }
-    var workJob by remember { mutableStateOf<Job?>(null) }
     val trimmedText = text.trim()
-    val scope = rememberCoroutineScope()
-    val context = LocalContext.current
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
-    fun notify(message: String) {
-        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-    }
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
         keyboardController?.show()
     }
     fun cancelAndGoBack() {
-        workJob?.cancel()
-        workJob = null
-        isWorking = false
+        onCancel()
         onBack()
     }
     BackHandler {
@@ -140,7 +132,7 @@ fun AiImportScreen(
                     .weight(1f)
                     .focusRequester(focusRequester),
             )
-            statusMessage?.let {
+            status?.let {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -165,63 +157,7 @@ fun AiImportScreen(
                     Text(if (isWorking) "Cancel" else "Back")
                 }
                 FilledTonalButton(
-                    onClick = {
-                        workJob = scope.launch {
-                            isWorking = true
-                            statusMessage = "Checking AICore status…"
-                            try {
-                                val code = AiImportHelper.checkStatusCode()
-                                if (code == null) {
-                                    statusMessage =
-                                        "AICore did not respond. Check that Google AICore is " +
-                                                "installed and updated, then retry."
-                                    notify("AICore unavailable")
-                                    return@launch
-                                }
-                                statusMessage = "AICore status: ${AiImportHelper.statusName(code)}"
-                                var failure: String? = null
-                                val ready = AiImportHelper.ensureDownloaded(
-                                    initialStatus = code,
-                                    onStarted = {
-                                        statusMessage =
-                                            "Downloading AI model (first download can take minutes)…"
-                                    },
-                                    onProgress = { downloaded ->
-                                        statusMessage =
-                                            "Downloading AI model… ${(downloaded / 1024)} KB"
-                                    },
-                                    onFailed = { failure = it },
-                                )
-                                if (!ready) {
-                                    statusMessage = failure
-                                        ?: "AICore status ${AiImportHelper.statusName(code)}, model not ready. Retry."
-                                    notify("AI unavailable on this device")
-                                    return@launch
-                                }
-                                statusMessage = "Parsing with on-device AI…"
-                                val parsed =
-                                    AiImportHelper.parseWithAi(trimmedText, existingCategories)
-                                if (parsed.isEmpty()) {
-                                    statusMessage = null
-                                    notify("AI found no items")
-                                } else {
-                                    onImportParsed(parsed)
-                                    notify("Imported ${parsed.size} items")
-                                    workJob = null
-                                    onBack()
-                                }
-                            } catch (_: CancellationException) {
-                                statusMessage = "Cancelled."
-                            } catch (e: Exception) {
-                                statusMessage =
-                                    "AI import failed: ${AiImportHelper.describeError(e)}"
-                                notify("AI import failed")
-                            } finally {
-                                isWorking = false
-                                workJob = null
-                            }
-                        }
-                    },
+                    onClick = { onImport(text) },
                     enabled = trimmedText.isNotEmpty() && !isWorking,
                     modifier = Modifier.weight(1f),
                 ) {
@@ -237,9 +173,11 @@ fun AiImportScreen(
 fun AiImportScreenPreview() {
     TodoListTheme {
         AiImportScreen(
-            existingCategories = listOf("Dairy", "Bakery"),
+            status = "Parsing with on-device AI…",
+            isWorking = true,
             onBack = {},
-            onImportParsed = {},
+            onCancel = {},
+            onImport = {},
         )
     }
 }
