@@ -13,6 +13,16 @@ import com.materialkolor.rememberDynamicColorScheme
 import org.cssnr.todolist.data.SettingsRepository
 
 /**
+ * Whether this device can supply Material You's dynamic colors.
+ *
+ * The system tonal palette is an Android 12 (API 31) feature with no equivalent below it, so
+ * this is the single predicate the theme and the appearance settings must both agree on; a
+ * second, independently written copy of this check is how the two drift apart.
+ */
+val dynamicColorSupported: Boolean
+    get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+
+/**
  * The color scheme for the current dynamic/static choice in the current light/dark mode.
  *
  * A static seed is expanded into the whole Material 3 scheme by MaterialKolor (Google's own
@@ -26,7 +36,7 @@ import org.cssnr.todolist.data.SettingsRepository
  */
 @Composable
 fun colorSchemeFor(dynamic: Boolean, seedColor: Color, darkTheme: Boolean): ColorScheme {
-    return if (dynamic && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    return if (dynamic && dynamicColorSupported) {
         val context = LocalContext.current
         if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
     } else {

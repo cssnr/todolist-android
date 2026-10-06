@@ -1,7 +1,6 @@
 package org.cssnr.todolist.ui.screens
 
 import android.content.Intent
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -59,6 +58,7 @@ import org.cssnr.todolist.data.SettingsRepository
 import org.cssnr.todolist.ui.components.SettingsGroup
 import org.cssnr.todolist.ui.components.SettingsTile
 import org.cssnr.todolist.ui.theme.TodoListTheme
+import org.cssnr.todolist.ui.theme.dynamicColorSupported
 import org.cssnr.todolist.ui.theme.seedColorForHue
 import org.cssnr.todolist.ui.viewmodel.SettingsState
 import org.cssnr.todolist.ui.viewmodel.SettingsViewModel
@@ -149,25 +149,25 @@ fun SettingsScreen(
                         icon = rememberVectorPainter(Icons.Filled.Palette),
                         title = stringResource(R.string.settings_dynamic_color),
                         summary = stringResource(
-                            if (DYNAMIC_SUPPORTED) {
+                            if (dynamicColorSupported) {
                                 R.string.settings_dynamic_color_summary
                             } else {
                                 R.string.settings_dynamic_color_unavailable
                             },
                         ),
-                        checked = settings.dynamicColor && DYNAMIC_SUPPORTED,
-                        enabled = DYNAMIC_SUPPORTED,
+                        checked = settings.dynamicColor && dynamicColorSupported,
+                        enabled = dynamicColorSupported,
                         onCheckedChange = onDynamicChange,
                     ),
                     SettingsTile.Custom(
                         icon = rememberVectorPainter(Icons.Filled.Palette),
                         title = stringResource(R.string.settings_seed_color),
                         summary = stringResource(R.string.settings_seed_color_summary),
-                        enabled = !settings.dynamicColor || !DYNAMIC_SUPPORTED,
+                        enabled = !settings.dynamicColor || !dynamicColorSupported,
                         content = {
                             SeedColorPicker(
                                 seedHue = settings.seedHue,
-                                enabled = !settings.dynamicColor || !DYNAMIC_SUPPORTED,
+                                enabled = !settings.dynamicColor || !dynamicColorSupported,
                                 onSeedHueChange = onSeedHueChange,
                             )
                         },
@@ -244,8 +244,6 @@ private val CONTENT_BOTTOM_PADDING = 16.dp
 private val PICKER_SWATCH_SIZE = 36.dp
 private val PICKER_ROW_GAP = 6.dp
 private val PICKER_TRACK_HEIGHT = 40.dp
-
-private val DYNAMIC_SUPPORTED = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
 /**
  * Rainbow hue picker: one M3 Slider over a hue gradient track plus a preview swatch.
