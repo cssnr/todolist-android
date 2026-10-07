@@ -15,3 +15,7 @@
 # Keep source file names and line numbers for readable stack traces (ACRA).
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
+
+# ML Kit's registrar is instantiated reflectively from manifest meta-data;
+# firebase-components 16.1.0 (via mlkit:common) only keeps the class name.
+-keep class * implements com.google.firebase.components.ComponentRegistrar { void <init>(); }
