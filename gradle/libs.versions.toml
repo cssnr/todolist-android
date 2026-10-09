@@ -19,7 +19,7 @@ composeBom = "2026.09.00"
 materialIcons = "1.7.8"
 composeUiTest = "1.12.1"
 revealSwipe = "3.1.0-rc02"
-acra = "5.13.1"
+acra = "5.14.2"
 materialKolor = "5.0.1"
 mlkitPrompt = "1.0.0-beta4"
 

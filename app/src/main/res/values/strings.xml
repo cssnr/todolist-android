@@ -37,9 +37,9 @@
     <string name="about_todolist">About %1$s</string>
     <string name="about_todolist_summary">%1$s v%2$s. More info.</string>
     <string name="about_version">Version %1$s</string>
-    <string name="about_view_source">Open Source</string>
+    <string name="about_view_source">GitHub</string>
     <string name="about_view_source_summary">View Source Code on GitHub</string>
-    <string name="about_visit_website">Visit Website</string>
+    <string name="about_visit_website">Website</string>
     <string name="about_visit_website_summary">View Developer\'s Website</string>
     <string name="about_discord">Discord</string>
     <string name="about_discord_summary">Chat on Discord</string>
