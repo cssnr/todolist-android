@@ -81,6 +81,7 @@ fun SettingsRoute(
         onDynamicChange = viewModel::setDynamicColor,
         onSeedHueChange = viewModel::setSeedHue,
         onCrashReportingChange = viewModel::setCrashReporting,
+        onCrashReportingDisable = viewModel::confirmCrashReportingDisable,
         onCrashReportingMoreInfo = {
             context.startActivity(
                 Intent(Intent.ACTION_VIEW, acraInfoLink.toUri())
@@ -100,6 +101,7 @@ fun SettingsScreen(
     onDynamicChange: (Boolean) -> Unit,
     onSeedHueChange: (Float) -> Unit,
     onCrashReportingChange: (Boolean) -> Unit,
+    onCrashReportingDisable: () -> Unit,
     onCrashReportingMoreInfo: () -> Unit,
     onAboutClick: () -> Unit = {},
 ) {
@@ -193,6 +195,8 @@ fun SettingsScreen(
                         onCheckedChange = { newValue ->
                             if (newValue) {
                                 onCrashReportingChange(true)
+                            } else if (settings.crashDisableCount >= SettingsRepository.MAX_CRASH_DISABLE_PROMPTS) {
+                                onCrashReportingChange(false)
                             } else {
                                 showCrashReportingDialog = true
                             }
@@ -225,23 +229,26 @@ fun SettingsScreen(
             title = { Text(stringResource(R.string.acra_disable_title)) },
             text = { Text(stringResource(R.string.acra_disable_message)) },
             confirmButton = {
-                Row {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     TextButton(onClick = onCrashReportingMoreInfo) {
                         Text(stringResource(R.string.acra_disable_more_info))
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
+                    TextButton(onClick = { showCrashReportingDialog = false }) {
+                        Text(stringResource(R.string.acra_disable_cancel))
                     }
                     TextButton(
                         onClick = {
                             showCrashReportingDialog = false
-                            onCrashReportingChange(false)
+                            onCrashReportingDisable()
                         }
                     ) {
                         Text(stringResource(R.string.acra_disable_confirm))
                     }
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showCrashReportingDialog = false }) {
-                    Text(stringResource(R.string.acra_disable_cancel))
                 }
             },
         )
@@ -337,6 +344,7 @@ fun SettingsScreenPreview() {
             onDynamicChange = {},
             onSeedHueChange = {},
             onCrashReportingChange = {},
+            onCrashReportingDisable = {},
             onCrashReportingMoreInfo = {},
             onAboutClick = {},
         )

@@ -17,6 +17,7 @@ data class SettingsState(
     val dynamicColor: Boolean = true,
     val seedHue: Float = SettingsRepository.DEFAULT_SEED_HUE,
     val crashReporting: Boolean = true,
+    val crashDisableCount: Int = 0,
 )
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
@@ -38,7 +39,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         ) { dynamicColor, seedHue, crashReporting ->
             Triple(dynamicColor, seedHue, crashReporting)
         },
-    ) { prefs, appearance ->
+        settingsRepository.crashDisableCount,
+    ) { prefs, appearance, crashDisableCount ->
         val (autoOpenLastList, showSearchCategories, fullWidthStrikethrough) = prefs
         val (dynamicColor, seedHue, crashReporting) = appearance
         SettingsState(
@@ -48,6 +50,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             dynamicColor = dynamicColor,
             seedHue = seedHue,
             crashReporting = crashReporting,
+            crashDisableCount = crashDisableCount,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -88,6 +91,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setCrashReporting(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setCrashReporting(enabled)
+        }
+    }
+
+    fun confirmCrashReportingDisable() {
+        viewModelScope.launch {
+            settingsRepository.confirmCrashReportingDisable()
         }
     }
 }
