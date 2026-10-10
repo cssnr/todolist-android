@@ -13,6 +13,7 @@ import org.cssnr.todolist.data.SettingsRepository
 data class SettingsState(
     val autoOpenLastList: Boolean = true,
     val showSearchCategories: Boolean = true,
+    val searchStartOfWordsOnly: Boolean = false,
     val fullWidthStrikethrough: Boolean = false,
     val dynamicColor: Boolean = true,
     val seedHue: Float = SettingsRepository.DEFAULT_SEED_HUE,
@@ -40,12 +41,14 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             Triple(dynamicColor, seedHue, crashReporting)
         },
         settingsRepository.crashDisableCount,
-    ) { prefs, appearance, crashDisableCount ->
+        settingsRepository.searchStartOfWordsOnly,
+    ) { prefs, appearance, crashDisableCount, searchStartOfWordsOnly ->
         val (autoOpenLastList, showSearchCategories, fullWidthStrikethrough) = prefs
         val (dynamicColor, seedHue, crashReporting) = appearance
         SettingsState(
             autoOpenLastList = autoOpenLastList,
             showSearchCategories = showSearchCategories,
+            searchStartOfWordsOnly = searchStartOfWordsOnly,
             fullWidthStrikethrough = fullWidthStrikethrough,
             dynamicColor = dynamicColor,
             seedHue = seedHue,
@@ -67,6 +70,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setShowSearchCategories(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setShowSearchCategories(enabled)
+        }
+    }
+
+    fun setSearchStartOfWordsOnly(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setSearchStartOfWordsOnly(enabled)
         }
     }
 
