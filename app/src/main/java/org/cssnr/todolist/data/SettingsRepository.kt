@@ -23,6 +23,7 @@ class SettingsRepository(private val context: Context) {
         val AUTO_OPEN_LAST_LIST = booleanPreferencesKey("auto_open_last_list")
         val LAST_OPENED_LIST_ID = longPreferencesKey("last_opened_list_id")
         val SHOW_SEARCH_CATEGORIES = booleanPreferencesKey("show_search_categories")
+        val SEARCH_START_OF_WORDS_ONLY = booleanPreferencesKey("search_start_of_words_only")
         val FULL_WIDTH_STRIKETHROUGH = booleanPreferencesKey("full_width_strikethrough")
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val SEED_HUE = floatPreferencesKey("seed_hue")
@@ -42,6 +43,9 @@ class SettingsRepository(private val context: Context) {
 
     val showSearchCategories: Flow<Boolean> = context.settingsDataStore.data
         .map { preferences -> preferences[Keys.SHOW_SEARCH_CATEGORIES] ?: true }
+
+    val searchStartOfWordsOnly: Flow<Boolean> = context.settingsDataStore.data
+        .map { preferences -> preferences[Keys.SEARCH_START_OF_WORDS_ONLY] ?: false }
 
     val fullWidthStrikethrough: Flow<Boolean> = context.settingsDataStore.data
         .map { preferences -> preferences[Keys.FULL_WIDTH_STRIKETHROUGH] ?: false }
@@ -83,6 +87,12 @@ class SettingsRepository(private val context: Context) {
     suspend fun setShowSearchCategories(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
             preferences[Keys.SHOW_SEARCH_CATEGORIES] = enabled
+        }
+    }
+
+    suspend fun setSearchStartOfWordsOnly(enabled: Boolean) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[Keys.SEARCH_START_OF_WORDS_ONLY] = enabled
         }
     }
 

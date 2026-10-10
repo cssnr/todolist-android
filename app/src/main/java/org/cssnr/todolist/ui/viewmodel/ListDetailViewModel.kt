@@ -50,14 +50,22 @@ class ListDetailViewModel(
     val query: StateFlow<String> = _query
 
     @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
-    val suggestions: StateFlow<List<CatalogSuggestion>> = _query
-        .debounce(100.milliseconds)
-        .distinctUntilChanged()
-        .flatMapLatest { prefix ->
-            if (prefix.isBlank()) {
+    val suggestions: StateFlow<List<CatalogSuggestion>> = combine(
+        _query
+            .debounce(100.milliseconds)
+            .distinctUntilChanged(),
+        settingsRepository.searchStartOfWordsOnly,
+    ) { query, prefixOnly -> query to prefixOnly }
+        .flatMapLatest { (query, prefixOnly) ->
+            if (query.isBlank()) {
                 flowOf(emptyList())
             } else {
-                catalogRepository.autocomplete(prefix.trim())
+                val trimmed = query.trim()
+                if (prefixOnly) {
+                    catalogRepository.autocomplete(trimmed)
+                } else {
+                    catalogRepository.autocompleteContains(trimmed)
+                }
             }
         }
         .stateIn(

@@ -26,6 +26,9 @@ class CatalogRepository(
     fun autocomplete(prefix: String, limit: Int = 50): Flow<List<CatalogSuggestion>> =
         dao.autocomplete(prefix, limit)
 
+    fun autocompleteContains(query: String, limit: Int = 50): Flow<List<CatalogSuggestion>> =
+        dao.autocompleteContains(query, limit)
+
     suspend fun ensureSeeded() = mutateLock.withLock {
         withContext(Dispatchers.IO) {
             val file = cachedItemsFile()

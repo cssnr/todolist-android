@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.FormatStrikethrough
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -77,6 +78,7 @@ fun SettingsRoute(
         settings = current,
         onAutoOpenLastListChange = viewModel::setAutoOpenLastList,
         onShowSearchCategoriesChange = viewModel::setShowSearchCategories,
+        onSearchStartOfWordsOnlyChange = viewModel::setSearchStartOfWordsOnly,
         onFullWidthStrikethroughChange = viewModel::setFullWidthStrikethrough,
         onDynamicChange = viewModel::setDynamicColor,
         onSeedHueChange = viewModel::setSeedHue,
@@ -97,6 +99,7 @@ fun SettingsScreen(
     settings: SettingsState,
     onAutoOpenLastListChange: (Boolean) -> Unit,
     onShowSearchCategoriesChange: (Boolean) -> Unit,
+    onSearchStartOfWordsOnlyChange: (Boolean) -> Unit,
     onFullWidthStrikethroughChange: (Boolean) -> Unit,
     onDynamicChange: (Boolean) -> Unit,
     onSeedHueChange: (Float) -> Unit,
@@ -134,6 +137,13 @@ fun SettingsScreen(
                         summary = stringResource(R.string.settings_show_search_categories_summary),
                         checked = settings.showSearchCategories,
                         onCheckedChange = onShowSearchCategoriesChange,
+                    ),
+                    SettingsTile.Toggle(
+                        icon = rememberVectorPainter(Icons.Filled.Search),
+                        title = stringResource(R.string.settings_search_start_of_words_only),
+                        summary = stringResource(R.string.settings_search_start_of_words_only_summary),
+                        checked = settings.searchStartOfWordsOnly,
+                        onCheckedChange = onSearchStartOfWordsOnlyChange,
                     ),
                     SettingsTile.Toggle(
                         icon = rememberVectorPainter(Icons.Filled.FormatStrikethrough),
@@ -333,6 +343,7 @@ fun SettingsScreenPreview() {
             settings = SettingsState(
                 autoOpenLastList = true,
                 showSearchCategories = true,
+                searchStartOfWordsOnly = false,
                 fullWidthStrikethrough = false,
                 dynamicColor = false,
                 seedHue = SettingsRepository.DEFAULT_SEED_HUE,
@@ -340,6 +351,7 @@ fun SettingsScreenPreview() {
             ),
             onAutoOpenLastListChange = {},
             onShowSearchCategoriesChange = {},
+            onSearchStartOfWordsOnlyChange = {},
             onFullWidthStrikethroughChange = {},
             onDynamicChange = {},
             onSeedHueChange = {},

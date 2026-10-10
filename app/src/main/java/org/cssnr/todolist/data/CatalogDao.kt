@@ -27,6 +27,18 @@ interface CatalogDao {
     )
     fun autocomplete(prefix: String, limit: Int = 50): Flow<List<CatalogSuggestion>>
 
+    @Query(
+        """
+        SELECT ci.id AS id, ci.name AS name, c.name AS categoryName
+        FROM catalog_items ci
+        JOIN categories c ON c.id = ci.categoryId
+        WHERE ci.name LIKE '%' || :query || '%'
+        ORDER BY c.id, ci.id
+        LIMIT :limit
+        """,
+    )
+    fun autocompleteContains(query: String, limit: Int = 50): Flow<List<CatalogSuggestion>>
+
     @Query("SELECT dataVersion FROM catalog_meta WHERE metaKey = :key")
     suspend fun dataVersion(key: String): Long?
 
