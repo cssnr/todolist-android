@@ -52,13 +52,11 @@
   - [Command Line](#Command-Line)
 - [Contributing](#Contributing)
 
-An offline-first todo list app with a focus on grocery shopping.
+A todo list app with a focus on grocery shopping lists.
 
-Built with Kotlin, Jetpack Compose, Material 3 and Room.
-All of your lists and items are stored locally on your device — no account, no ads, no servers.
+Start typing to search a built-in grocery catalog, add items to your lists, and check them off as you shop.
 
-Start typing to search a built-in grocery catalog, add items to your lists,
-and check them off as you shop.
+Add items to your list using natural language and on-device AI for supported devices (requires [AICore](https://developers.google.com/ml-kit/genai#prompt-device)).
 
 > [!NOTE]  
 > This app is in early release for testing.  

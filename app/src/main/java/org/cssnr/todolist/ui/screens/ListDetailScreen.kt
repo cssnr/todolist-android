@@ -462,8 +462,8 @@ fun ListDetailScreen(
                 if (isAiAvailable) {
                     IconButton(onClick = onOpenAiImport) {
                         Icon(
-                            painter = painterResource(R.drawable.md_text_to_speech_24px),
-                            contentDescription = "AI import items",
+                            painter = painterResource(R.drawable.md_wand_stars_24px),
+                            contentDescription = "AI Import",
                         )
                     }
                 }
