@@ -27,6 +27,7 @@ class SettingsRepository(private val context: Context) {
         val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val SEED_HUE = floatPreferencesKey("seed_hue")
         const val CRASH_REPORTING = "acra.enable"
+        const val CRASH_DISABLE_COUNT = "ui_acra_disable_count"
     }
 
     @Suppress("DEPRECATION")
@@ -59,6 +60,17 @@ class SettingsRepository(private val context: Context) {
         }
         acraPreferences.registerOnSharedPreferenceChangeListener(listener)
         trySend(acraPreferences.getBoolean(Keys.CRASH_REPORTING, true))
+        awaitClose { acraPreferences.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
+
+    val crashDisableCount: Flow<Int> = callbackFlow {
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == Keys.CRASH_DISABLE_COUNT) {
+                trySend(acraPreferences.getInt(Keys.CRASH_DISABLE_COUNT, 0))
+            }
+        }
+        acraPreferences.registerOnSharedPreferenceChangeListener(listener)
+        trySend(acraPreferences.getInt(Keys.CRASH_DISABLE_COUNT, 0))
         awaitClose { acraPreferences.unregisterOnSharedPreferenceChangeListener(listener) }
     }
 
@@ -96,6 +108,13 @@ class SettingsRepository(private val context: Context) {
         acraPreferences.edit().putBoolean(Keys.CRASH_REPORTING, enabled).apply()
     }
 
+    fun confirmCrashReportingDisable() {
+        acraPreferences.edit()
+            .putBoolean(Keys.CRASH_REPORTING, false)
+            .putInt(Keys.CRASH_DISABLE_COUNT, acraPreferences.getInt(Keys.CRASH_DISABLE_COUNT, 0) + 1)
+            .apply()
+    }
+
     suspend fun setLastOpenedListId(listId: Long) {
         context.settingsDataStore.edit { preferences ->
             preferences[Keys.LAST_OPENED_LIST_ID] = listId
@@ -105,5 +124,6 @@ class SettingsRepository(private val context: Context) {
     companion object {
         // Hue of TodoList blue (#16A1E0) on the vivid (S=V=1) picker ramp.
         const val DEFAULT_SEED_HUE = 198.71f
+        const val MAX_CRASH_DISABLE_PROMPTS = 2
     }
 }
