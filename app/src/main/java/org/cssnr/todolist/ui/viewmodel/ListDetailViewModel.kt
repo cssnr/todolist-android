@@ -12,6 +12,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -34,6 +35,10 @@ import org.cssnr.todolist.data.TodoListEntity
 import org.cssnr.todolist.data.TodoListRepository
 import kotlin.time.Duration.Companion.milliseconds
 
+private const val UNCATEGORIZED = "Uncategorized"
+
+private const val MAX_SUGGESTIONS = 50
+
 class ListDetailViewModel(
     application: Application,
     private val listId: Long,
@@ -49,11 +54,33 @@ class ListDetailViewModel(
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query
 
-    @OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
-    val suggestions: StateFlow<List<CatalogSuggestion>> = combine(
-        _query
-            .debounce(100.milliseconds)
-            .distinctUntilChanged(),
+    val list: StateFlow<TodoListEntity?> = repository.observeList(listId)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = null,
+        )
+
+    val items: StateFlow<List<TodoItemEntity>> = repository.observeItems(listId)
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList(),
+        )
+
+    @OptIn(FlowPreview::class)
+    private val debouncedQuery: StateFlow<String> = _query
+        .debounce(100.milliseconds)
+        .distinctUntilChanged()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = "",
+        )
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val catalogResults: Flow<List<CatalogSuggestion>> = combine(
+        debouncedQuery,
         settingsRepository.searchStartOfWordsOnly,
     ) { query, prefixOnly -> query to prefixOnly }
         .flatMapLatest { (query, prefixOnly) ->
@@ -68,20 +95,17 @@ class ListDetailViewModel(
                 }
             }
         }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = emptyList(),
-        )
 
-    val list: StateFlow<TodoListEntity?> = repository.observeList(listId)
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = null,
-        )
-
-    val items: StateFlow<List<TodoItemEntity>> = repository.observeItems(listId)
+    // Merges catalog suggestions with matching items from the current list.
+    // List matches come first so their categories win on name collisions.
+    val suggestions: StateFlow<List<CatalogSuggestion>> = combine(
+        catalogResults,
+        items,
+        debouncedQuery,
+        settingsRepository.searchStartOfWordsOnly,
+    ) { catalog, items, query, prefixOnly ->
+        mergeSearchSuggestions(catalog, items, query, prefixOnly)
+    }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
@@ -269,3 +293,35 @@ class ListDetailViewModel(
         }
     }
 }
+
+internal fun mergeSearchSuggestions(
+    catalog: List<CatalogSuggestion>,
+    items: List<TodoItemEntity>,
+    query: String,
+    prefixOnly: Boolean,
+    limit: Int = MAX_SUGGESTIONS,
+): List<CatalogSuggestion> {
+    val trimmed = query.trim()
+    if (trimmed.isEmpty()) return emptyList()
+    // Negative ids can never collide with catalog ids (both autoincrement from 1).
+    val listMatches = items
+        .filter { matchesSearch(it.text, trimmed, prefixOnly) }
+        .distinctBy { it.text.lowercase() }
+        .map {
+            CatalogSuggestion(
+                id = -it.id,
+                name = it.text,
+                categoryName = it.category ?: UNCATEGORIZED,
+            )
+        }
+    val seen = listMatches.mapTo(mutableSetOf()) { it.name.lowercase() }
+    val catalogFresh = catalog.filter { seen.add(it.name.lowercase()) }
+    return (listMatches + catalogFresh).take(limit)
+}
+
+internal fun matchesSearch(text: String, query: String, prefixOnly: Boolean): Boolean =
+    if (prefixOnly) {
+        text.startsWith(query, ignoreCase = true)
+    } else {
+        text.contains(query, ignoreCase = true)
+    }
