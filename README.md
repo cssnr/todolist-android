@@ -52,14 +52,14 @@
   - [Command Line](#Command-Line)
 - [Contributing](#Contributing)
 
-A todo list app with a focus on grocery shopping lists.
+A todo list app with a focus on grocery shopping lists (only because that's all the search suggestions contain currently).
 
-Start typing to search a built-in grocery catalog, add items to your lists, and check them off as you shop.
+Start typing to search a pre-populated list of items, add items to your lists, and check them off as you go...
 
 Add items to your list using natural language and on-device AI for supported devices (requires [AICore](https://developers.google.com/ml-kit/genai#prompt-device)).
 
 > [!NOTE]  
-> This app is in early release for testing.  
+> This app is in early release for testing. Expect frequent and possibly breaking changes.  
 > Please report any [Issues](https://github.com/cssnr/todolist-android/issues) you find.
 
 ## Install
