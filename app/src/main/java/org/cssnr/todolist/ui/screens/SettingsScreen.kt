@@ -224,6 +224,7 @@ fun SettingsScreen(
                             R.string.about_todolist_summary,
                             appName,
                             org.cssnr.todolist.BuildConfig.VERSION_NAME,
+                            org.cssnr.todolist.BuildConfig.VERSION_CODE,
                         ),
                         onClick = onAboutClick,
                     ),
