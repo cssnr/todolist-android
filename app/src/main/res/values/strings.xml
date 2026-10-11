@@ -31,7 +31,7 @@
     <string name="settings_seed_color_summary">Used when dynamic color is off</string>
     <string name="settings_seed_color_summary_always">Sets your app colors</string>
     <string name="settings_crash_reporting">Enable Crash Reporting</string>
-    <string name="settings_crash_reporting_summary">Send Crash Reports</string>
+    <string name="settings_crash_reporting_summary">Send crash reports</string>
 
     <!-- About -->
     <string name="settings_group_about">About</string>
