@@ -280,7 +280,7 @@ class ListDetailViewModel(
     }
 
     private fun notify(message: String) {
-        Toast.makeText(getApplication<Application>(), message, Toast.LENGTH_SHORT).show()
+        Toast.makeText(getApplication(), message, Toast.LENGTH_SHORT).show()
     }
 
     companion object {
