@@ -117,12 +117,14 @@ The app is ready to use as soon as it is installed — no account, login or setu
 
 ## Features
 
-- **Find as you type** — searching instantly surfaces matching items from the built-in grocery catalog; you can also add any custom item.
+- **Add items with AI** — easily add items using natural language (on [supported devices](https://developers.google.com/ml-kit/genai#prompt-device)).
+- **Find as you type** — searching instantly surfaces matching items from the built-in catalog.
 - **Single tap to complete** — tap an item to toggle it done or active, with a neat strike-through.
 - **Easily hide/show completed** — one tap on the eye icon filters out everything you have already picked up.
 - **Swipe to edit or delete** — swipe any item to the right to reveal Edit and Delete actions.
 - **Multiple lists** — create as many lists as you need, such as Groceries, Hardware or Chores.
 - **Grouped by category** — items are automatically grouped under grocery categories like Bakery and Dairy & Eggs.
+- **Import and export** — import and export lists with support for categories.
 - **Offline first** — everything is stored locally with Room; works fully offline, no account or servers.
 - **Settings** — auto-open your last list on launch and toggle search categories.
 - **Material 3 UI** — built with Jetpack Compose; light and dark themes with dynamic Material You colors on Android 12+.
@@ -130,13 +132,8 @@ The app is ready to use as soon as it is installed — no account, login or setu
 
 ### Planned
 
-- Reorder items within a list.
-- Rename and delete lists.
-- Search across all lists.
-- Quantities and prices for grocery items.
-- Backup and restore.
-
-_Note: This list was AI generated..._
+- Reorder lists and items in a list.
+- Add geofencing to show startup list.
 
 [![Request Feature](https://img.shields.io/badge/request_feature-brightgreen?style=for-the-badge&logo=rocket&logoColor=white)](https://github.com/cssnr/todolist-android/issues/new)
 [![Report Issue](https://img.shields.io/badge/report_issue-red?style=for-the-badge&logo=southwestairlines&logoColor=white)](https://github.com/cssnr/todolist-android/issues)
@@ -147,10 +144,10 @@ If you run into any issues or need help getting started, please do one of the fo
 
 - Report an Issue: <https://github.com/cssnr/todolist-android/issues>
 - Q&A Discussion: <https://github.com/cssnr/todolist-android/discussions/categories/q-a>
-- Request a Feature: <https://github.com/cssnr/todolist-android/issues/new>
+- Request a Feature: <https://github.com/cssnr/todolist-android/issues/new?template=1-feature.yaml>
 - Chat with us on Discord: <https://discord.gg/wXy6m2X8wY>
 
-[![Features](https://img.shields.io/badge/features-brightgreen?style=for-the-badge&logo=rocket&logoColor=white)](https://github.com/cssnr/todolist-android/issues/new)
+[![Features](https://img.shields.io/badge/features-brightgreen?style=for-the-badge&logo=rocket&logoColor=white)](https://github.com/cssnr/todolist-android/issues/new?template=1-feature.yaml)
 [![Issues](https://img.shields.io/badge/issues-red?style=for-the-badge&logo=southwestairlines&logoColor=white)](https://github.com/cssnr/todolist-android/issues)
 [![Discussions](https://img.shields.io/badge/discussions-blue?style=for-the-badge&logo=livechat&logoColor=white)](https://github.com/cssnr/todolist-android/discussions)
 [![Discord](https://img.shields.io/badge/discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/wXy6m2X8wY)
