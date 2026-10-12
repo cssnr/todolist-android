@@ -185,7 +185,7 @@ class ListDetailViewModel(
     suspend fun importParsed(parsed: List<Pair<String, String?>>) {
         withContext(NonCancellable) {
             val existingCategories = repository.listCategories(listId) +
-                parsed.mapNotNull { it.second }
+                    parsed.mapNotNull { it.second }
             val categoryByName = existingCategories
                 .distinctBy { it.lowercase() }
                 .associateBy { it.lowercase() }
@@ -220,7 +220,7 @@ class ListDetailViewModel(
                 if (code == null) {
                     _aiStatus.value =
                         "AICore did not respond. Check that Google AICore is " +
-                            "installed and updated, then retry."
+                                "installed and updated, then retry."
                     notify("AICore unavailable")
                     return@launch
                 }
@@ -280,7 +280,7 @@ class ListDetailViewModel(
     }
 
     private fun notify(message: String) {
-        Toast.makeText(getApplication<Application>(), message, Toast.LENGTH_SHORT).show()
+        Toast.makeText(getApplication(), message, Toast.LENGTH_SHORT).show()
     }
 
     companion object {

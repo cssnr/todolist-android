@@ -121,7 +121,10 @@ class SettingsRepository(private val context: Context) {
     fun confirmCrashReportingDisable() {
         acraPreferences.edit()
             .putBoolean(Keys.CRASH_REPORTING, false)
-            .putInt(Keys.CRASH_DISABLE_COUNT, acraPreferences.getInt(Keys.CRASH_DISABLE_COUNT, 0) + 1)
+            .putInt(
+                Keys.CRASH_DISABLE_COUNT,
+                acraPreferences.getInt(Keys.CRASH_DISABLE_COUNT, 0) + 1
+            )
             .apply()
     }
 

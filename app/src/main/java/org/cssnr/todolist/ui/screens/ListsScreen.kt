@@ -132,7 +132,12 @@ fun ListsScreen(
                     .padding(innerPadding),
                 // Bottom reserves the standard 16.dp plus FAB height (56.dp) plus
                 // one row spacing (8.dp) so the last item scrolls clear of the FAB.
-                contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 80.dp),
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    top = 16.dp,
+                    end = 16.dp,
+                    bottom = 80.dp
+                ),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items(lists, key = { it.id }) { list ->

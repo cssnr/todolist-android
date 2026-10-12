@@ -96,8 +96,7 @@ sealed interface SettingsTile {
         override val summary: String? = null,
         override val enabled: Boolean = true,
         val content: @Composable () -> Unit,
-    ) : SettingsTile {
-    }
+    ) : SettingsTile
 }
 
 /**
@@ -218,7 +217,7 @@ private fun SettingsTileRow(
 
                 is SettingsTile.Link,
                 is SettingsTile.Custom,
-                -> Unit
+                    -> Unit
 
                 is SettingsTile.Action -> {
                     Spacer(modifier = Modifier.width(TILE_TRAILING_GAP))
@@ -253,17 +252,27 @@ private fun SettingsTileRow(
 
 private val SettingsTile.onClick: () -> Unit
     get() = when (this) {
-        is SettingsTile.Toggle -> { { onCheckedChange(!checked) } }
+        is SettingsTile.Toggle -> {
+            { onCheckedChange(!checked) }
+        }
+
         is SettingsTile.Link -> onClick
         is SettingsTile.Action -> onClick
         // Never reached: Custom is excluded from the row-wide clickable in SettingsTileRow.
-        is SettingsTile.Custom -> { {} }
+        is SettingsTile.Custom -> {
+            {}
+        }
     }
 
 private fun tileShape(index: Int, count: Int): Shape {
     val top = if (index == 0) GROUP_CORNER_RADIUS else TILE_CORNER_RADIUS
     val bottom = if (index == count - 1) GROUP_CORNER_RADIUS else TILE_CORNER_RADIUS
-    return RoundedCornerShape(topStart = top, topEnd = top, bottomEnd = bottom, bottomStart = bottom)
+    return RoundedCornerShape(
+        topStart = top,
+        topEnd = top,
+        bottomEnd = bottom,
+        bottomStart = bottom
+    )
 }
 
 private val GROUP_CORNER_RADIUS = 20.dp
