@@ -127,7 +127,7 @@ The app is ready to use as soon as it is installed — no account, login or setu
 - **Import and export** — import and export lists with support for categories.
 - **Offline first** — everything is stored locally with Room; works fully offline, no account or servers.
 - **Settings** — auto-open your last list on launch and toggle search categories.
-- **Material 3 UI** — built with Jetpack Compose; light and dark themes with dynamic Material You colors on Android 12+.
+- **Material 3 UI** — built with Jetpack Compose; light and dark themes with dynamic Material You color.
 - **Quick launch** — splash screen and startup routing straight to your last list.
 
 ### Planned
