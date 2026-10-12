@@ -543,104 +543,104 @@ fun ListDetailScreen(
                                             }
                                         }
                                         val showDividerBelow = index + 1 < rows.size &&
-                                            rows[index + 1] is ItemRow.Item
+                                                rows[index + 1] is ItemRow.Item
                                         Column {
-                                        RevealSwipe(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            state = revealState,
-                                            coroutineScope = revealScope,
-                                            onContentClick = { onToggleItem(row.item) },
-                                            backgroundStartActionLabel = "Item actions",
-                                            backgroundEndActionLabel = null,
-                                            backgroundCardStartColor = Color.Transparent,
-                                            backgroundCardEndColor = Color.Transparent,
-                                            shape = MaterialTheme.shapes.medium,
-                                            card = { shape, content ->
-                                                Card(
-                                                    modifier = Modifier.matchParentSize(),
-                                                    colors = CardDefaults.cardColors(
-                                                        contentColor = MaterialTheme.colorScheme.onSurface,
-                                                        containerColor = Color.Transparent,
-                                                    ),
-                                                    shape = shape,
-                                                    content = content,
-                                                )
-                                            },
-                                            hiddenContentStart = {
-                                                Row(modifier = Modifier.fillMaxSize()) {
-                                                    SwipeActionButton(
-                                                        modifier = Modifier.weight(1f),
-                                                        background = MaterialTheme.colorScheme.primary,
-                                                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                                                        icon = Icons.Filled.Edit,
-                                                        label = "Edit",
-                                                        onClick = {
-                                                            revealScope.launch { revealState.reset() }
-                                                            editingItem = row.item
-                                                        },
-                                                    )
-                                                    SwipeActionButton(
-                                                        modifier = Modifier.weight(1f),
-                                                        background = MaterialTheme.colorScheme.error,
-                                                        contentColor = MaterialTheme.colorScheme.onError,
-                                                        icon = Icons.Filled.Delete,
-                                                        label = "Delete",
-                                                        onClick = {
-                                                            revealScope.launch { revealState.reset() }
-                                                            pendingDeleteItem = row.item
-                                                        },
-                                                    )
-                                                }
-                                            },
-                                        ) {
-                                            val item = row.item
-                                            ListItem(
-                                                headlineContent = {
-                                                    Text(
-                                                        modifier = Modifier
-                                                            .then(
-                                                                if (fullWidthStrikethrough) {
-                                                                    Modifier.fillMaxWidth()
-                                                                } else {
-                                                                    Modifier
-                                                                },
-                                                            )
-                                                            .then(
-                                                                if (item.done) {
-                                                                    Modifier.drawBehind {
-                                                                        drawLine(
-                                                                            color = strikeColor,
-                                                                            start = Offset(
-                                                                                0f,
-                                                                                size.height / 2f
-                                                                            ),
-                                                                            end = Offset(
-                                                                                size.width,
-                                                                                size.height / 2f
-                                                                            ),
-                                                                            strokeWidth = 2.dp.toPx(),
-                                                                        )
-                                                                    }
-                                                                } else {
-                                                                    Modifier
-                                                                },
-                                                            ),
-                                                        text = item.text,
-                                                        style = MaterialTheme.typography.bodyLarge,
-                                                        color = if (item.done) {
-                                                            MaterialTheme.colorScheme.onSurfaceVariant
-                                                        } else {
-                                                            MaterialTheme.colorScheme.onSurface
-                                                        },
+                                            RevealSwipe(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                state = revealState,
+                                                coroutineScope = revealScope,
+                                                onContentClick = { onToggleItem(row.item) },
+                                                backgroundStartActionLabel = "Item actions",
+                                                backgroundEndActionLabel = null,
+                                                backgroundCardStartColor = Color.Transparent,
+                                                backgroundCardEndColor = Color.Transparent,
+                                                shape = MaterialTheme.shapes.medium,
+                                                card = { shape, content ->
+                                                    Card(
+                                                        modifier = Modifier.matchParentSize(),
+                                                        colors = CardDefaults.cardColors(
+                                                            contentColor = MaterialTheme.colorScheme.onSurface,
+                                                            containerColor = Color.Transparent,
+                                                        ),
+                                                        shape = shape,
+                                                        content = content,
                                                     )
                                                 },
-                                            )
-                                        }
-                                        if (showDividerBelow) {
-                                            HorizontalDivider(
-                                                color = MaterialTheme.colorScheme.surfaceVariant,
-                                            )
-                                        }
+                                                hiddenContentStart = {
+                                                    Row(modifier = Modifier.fillMaxSize()) {
+                                                        SwipeActionButton(
+                                                            modifier = Modifier.weight(1f),
+                                                            background = MaterialTheme.colorScheme.primary,
+                                                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                                                            icon = Icons.Filled.Edit,
+                                                            label = "Edit",
+                                                            onClick = {
+                                                                revealScope.launch { revealState.reset() }
+                                                                editingItem = row.item
+                                                            },
+                                                        )
+                                                        SwipeActionButton(
+                                                            modifier = Modifier.weight(1f),
+                                                            background = MaterialTheme.colorScheme.error,
+                                                            contentColor = MaterialTheme.colorScheme.onError,
+                                                            icon = Icons.Filled.Delete,
+                                                            label = "Delete",
+                                                            onClick = {
+                                                                revealScope.launch { revealState.reset() }
+                                                                pendingDeleteItem = row.item
+                                                            },
+                                                        )
+                                                    }
+                                                },
+                                            ) {
+                                                val item = row.item
+                                                ListItem(
+                                                    headlineContent = {
+                                                        Text(
+                                                            modifier = Modifier
+                                                                .then(
+                                                                    if (fullWidthStrikethrough) {
+                                                                        Modifier.fillMaxWidth()
+                                                                    } else {
+                                                                        Modifier
+                                                                    },
+                                                                )
+                                                                .then(
+                                                                    if (item.done) {
+                                                                        Modifier.drawBehind {
+                                                                            drawLine(
+                                                                                color = strikeColor,
+                                                                                start = Offset(
+                                                                                    0f,
+                                                                                    size.height / 2f
+                                                                                ),
+                                                                                end = Offset(
+                                                                                    size.width,
+                                                                                    size.height / 2f
+                                                                                ),
+                                                                                strokeWidth = 2.dp.toPx(),
+                                                                            )
+                                                                        }
+                                                                    } else {
+                                                                        Modifier
+                                                                    },
+                                                                ),
+                                                            text = item.text,
+                                                            style = MaterialTheme.typography.bodyLarge,
+                                                            color = if (item.done) {
+                                                                MaterialTheme.colorScheme.onSurfaceVariant
+                                                            } else {
+                                                                MaterialTheme.colorScheme.onSurface
+                                                            },
+                                                        )
+                                                    },
+                                                )
+                                            }
+                                            if (showDividerBelow) {
+                                                HorizontalDivider(
+                                                    color = MaterialTheme.colorScheme.surfaceVariant,
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -828,66 +828,66 @@ private fun EditItemSheet(
                     .fillMaxWidth()
                     .heightIn(max = maxContentHeight),
             ) {
-            Text(
-                text = "Edit item",
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 8.dp),
-            )
-            OutlinedTextField(
-                state = textState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
-                label = { Text("Item") },
-                lineLimits = TextFieldLineLimits.SingleLine,
-            )
-            OutlinedTextField(
-                state = categoryState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 24.dp, end = 24.dp, top = 12.dp),
-                label = { Text("Category") },
-                placeholder = { Text("None") },
-                lineLimits = TextFieldLineLimits.SingleLine,
-            )
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f, fill = false)
-                    .padding(top = 8.dp),
-            ) {
-                item(key = NO_CATEGORY_KEY) {
-                    CategoryOption(
-                        label = "No category",
-                        selected = trimmedCategory.isEmpty(),
-                        onClick = { categoryState.setTextAndPlaceCursorAtEnd("") },
-                    )
-                }
-                items(categories, key = { it.lowercase() }) { category ->
-                    CategoryOption(
-                        label = category,
-                        selected = category.equals(trimmedCategory, ignoreCase = true),
-                        onClick = { categoryState.setTextAndPlaceCursorAtEnd(category) },
-                    )
-                }
-            }
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.End,
-            ) {
-                TextButton(onClick = onDismiss) {
-                    Text("Cancel")
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                TextButton(
-                    onClick = { onConfirm(trimmedText, trimmedCategory.ifEmpty { null }) },
-                    enabled = trimmedText.isNotBlank(),
+                Text(
+                    text = "Edit item",
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 8.dp),
+                )
+                OutlinedTextField(
+                    state = textState,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp),
+                    label = { Text("Item") },
+                    lineLimits = TextFieldLineLimits.SingleLine,
+                )
+                OutlinedTextField(
+                    state = categoryState,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 24.dp, end = 24.dp, top = 12.dp),
+                    label = { Text("Category") },
+                    placeholder = { Text("None") },
+                    lineLimits = TextFieldLineLimits.SingleLine,
+                )
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f, fill = false)
+                        .padding(top = 8.dp),
                 ) {
-                    Text("Save")
+                    item(key = NO_CATEGORY_KEY) {
+                        CategoryOption(
+                            label = "No category",
+                            selected = trimmedCategory.isEmpty(),
+                            onClick = { categoryState.setTextAndPlaceCursorAtEnd("") },
+                        )
+                    }
+                    items(categories, key = { it.lowercase() }) { category ->
+                        CategoryOption(
+                            label = category,
+                            selected = category.equals(trimmedCategory, ignoreCase = true),
+                            onClick = { categoryState.setTextAndPlaceCursorAtEnd(category) },
+                        )
+                    }
                 }
-            }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.End,
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("Cancel")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    TextButton(
+                        onClick = { onConfirm(trimmedText, trimmedCategory.ifEmpty { null }) },
+                        enabled = trimmedText.isNotBlank(),
+                    ) {
+                        Text("Save")
+                    }
+                }
             }
         }
     }

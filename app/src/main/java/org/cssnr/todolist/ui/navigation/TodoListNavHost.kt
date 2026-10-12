@@ -190,5 +190,5 @@ private fun AnimatedContentTransitionScope<NavBackStackEntry>.isListDetailNaviga
     suppress: Boolean,
 ): Boolean =
     !suppress &&
-        initialState.destination.hierarchy.any { it.hasRoute<ListsSection>() } &&
-        targetState.destination.hierarchy.any { it.hasRoute<ListsSection>() }
+            initialState.destination.hierarchy.any { it.hasRoute<ListsSection>() } &&
+            targetState.destination.hierarchy.any { it.hasRoute<ListsSection>() }

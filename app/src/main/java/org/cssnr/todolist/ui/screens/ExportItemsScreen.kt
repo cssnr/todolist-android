@@ -17,7 +17,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -44,7 +43,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import org.cssnr.todolist.R
 import org.cssnr.todolist.data.TodoItemEntity
-import org.cssnr.todolist.data.TodoListEntity
 import org.cssnr.todolist.ui.theme.TodoListTheme
 import org.cssnr.todolist.ui.viewmodel.ListDetailViewModel
 
@@ -207,8 +205,20 @@ fun ExportItemsScreenPreview() {
         ExportItemsScreen(
             listName = "Groceries",
             items = listOf(
-                TodoItemEntity(id = 1, listId = 1, text = "Bread", done = false, category = "Bakery"),
-                TodoItemEntity(id = 2, listId = 1, text = "Milk", done = false, category = "Dairy & Eggs"),
+                TodoItemEntity(
+                    id = 1,
+                    listId = 1,
+                    text = "Bread",
+                    done = false,
+                    category = "Bakery"
+                ),
+                TodoItemEntity(
+                    id = 2,
+                    listId = 1,
+                    text = "Milk",
+                    done = false,
+                    category = "Dairy & Eggs"
+                ),
             ),
             onBack = {},
         )
